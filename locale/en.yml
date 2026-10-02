@@ -1,0 +1,158 @@
+ernestdefoe-herald:
+  admin:
+    intro: "Herald sends bulk email to your members, the way Invision Community does. Mailings are written on the forum itself, in your forum's own editor, so open Herald there to write one."
+    open: Open Herald
+    batch_size_label: Emails per batch
+    batch_size_help: "How many emails go out in each batch. Lower this if your mail provider limits how fast you can send."
+    batch_delay_label: Seconds between batches
+    batch_delay_help: "A pause between batches, for mail providers with an hourly limit. 0 sends as fast as the server can."
+    reply_to_label: Reply-to address
+    reply_to_help: "Where replies to a mailing go. Leave empty to use the forum's sending address."
+    sending_heading: Sending in the background
+    sending_help: "While you watch the progress screen, your browser keeps the send moving. To let it continue after you close the page, run a queue worker, or add Flarum's scheduler to cron:"
+    permission: Send bulk email with Herald
+
+  forum:
+    nav:
+      label: Bulk mail
+    no_permission: "You do not have permission to send bulk email."
+
+    status:
+      draft: Draft
+      sending: Sending
+      sending_percent: "Sending · {percent}%"
+      sent: Sent
+      cancelled: Cancelled
+
+    list:
+      title: Bulk mail
+      intro: "Write once, personalise with quick tags, and send to the members you choose."
+      create: Create new
+      empty: "No mailings yet. Create one to email your members."
+      subject: Subject
+      status: Status
+      sent: Sent
+      date: Date
+      by: "by {name}"
+      actions: Actions
+      edit: Edit
+      view_progress: View progress
+      copy: Copy
+      copy_of: "Copy of {subject}"
+      delete: Delete
+      delete_confirm: "Delete \"{subject}\"? This cannot be undone."
+
+    edit:
+      title: Bulk mail
+      new_title: New mailing
+      untitled: (no subject)
+      back: All mailings
+      tab_content: Content
+      tab_recipients: Recipients
+      subject: Subject
+      subject_placeholder: "News from {suite_name}"
+      content: Message
+      content_placeholder: "Hi {member_name}, …"
+      save: Save
+      saved: Saved
+      unsaved: Unsaved changes
+      preview: Preview
+      test: Send test to me
+      test_sent: "A test was sent to {email}."
+      send: Send…
+      resend: Send again…
+      count_label: "{count, plural, one {member will receive this} other {members will receive this}}"
+      consent_note: "Members who have opted out of news from the forum team, and members who have not confirmed their email address, are never sent bulk mail."
+      summary_sent: "Sent to {sent} of {total} members. Editing it and sending again sends to everyone who matches at that moment."
+      summary_cancelled: "Cancelled after {sent} of {total} members."
+
+    tags:
+      title: Quick tags
+      help: "Click a tag to add it where your cursor is. Each member receives their own details."
+      aliases: "Also accepted: {aliases}"
+      member_id: The member's ID number
+      member_name: The member's display name
+      member_username: The member's username
+      member_joined: The date they joined
+      member_last_visit: The date of their last visit
+      member_posts: How many posts they have made
+      member_discussions: How many discussions they have started
+      suite_name: The forum's title
+      suite_url: The forum's address
+      reg_total: How many members the forum has
+      total_posts: How many posts the forum has
+      total_discussions: How many discussions the forum has
+      unsubscribe_url: Their personal unsubscribe link
+      settings_url: Their email settings page
+
+    filters:
+      groups: Groups
+      groups_include_help: "Send to members of any of these groups. Leave all unticked to send to everyone."
+      groups_exclude_help: "Leave out members of these groups."
+      joined: Joined
+      after: On or after
+      before: On or before
+      last_visit: Last visit
+      last_visit_any: Any time
+      last_visit_active: Visited within the last
+      last_visit_inactive: Has not visited for at least
+      days: days
+      posts: Posts
+      discussions: Discussions
+      at_least: At least
+      at_most: At most
+      suspended: Suspended members
+      suspended_include: Include suspended members
+
+    preview:
+      title: Preview
+      subject: "Subject:"
+      no_subject: (no subject)
+      explain: "Shown with your own details in place of the quick tags, the way each member will see theirs."
+
+    send:
+      title: Send this mailing?
+      resend_title: Send this mailing again?
+      reach: "{count, plural, one {{formatted} member} other {{formatted} members}}"
+      excluded: "{optedOut} opted out and {unconfirmed} unconfirmed will not receive it."
+      cannot_recall: "Email cannot be recalled once it is sent."
+      confirm: "{count, plural, one {Send to # member} other {Send to # members}}"
+      nobody: Nobody matches these filters
+
+    progress:
+      count: "{done} of {total} sent"
+      failed: "{count, plural, one {# failed} other {# failed}}"
+      background: "You can leave this page. Sending carries on in the background."
+      keep_open: "Keep this page open until sending finishes. This forum has no queue worker or scheduled task to carry on without it."
+      cancel: Cancel sending
+      cancel_confirm: "Stop sending? Members who have already been sent it keep their copy."
+
+    settings:
+      heading: News from the forum team
+      label: "Email me news and announcements from {forumTitle}"
+      help: "Occasional emails sent to members by the forum team. Notifications about your discussions are separate and unaffected."
+
+    errors:
+      subject_required: Give the mailing a subject first.
+      subject_too_long: The subject can be at most 255 characters.
+      content_required: Write a message first.
+      sending: "This mailing is sending. Cancel it first."
+
+  email:
+    why: "You are receiving this because you are a member of {forumTitle} and have not opted out of news from the forum team."
+    unsubscribe: Unsubscribe
+    how_to_opt_out: How to opt out
+
+  unsubscribe:
+    title: Email preferences
+    confirm_title: Unsubscribe from forum news?
+    confirm_text: "You will stop receiving news and announcements from the {forumTitle} team. Notifications about your own discussions are not affected."
+    confirm_button: Unsubscribe
+    done_title: You are unsubscribed
+    done_text: "You will not receive any more news emails from {forumTitle}. You can turn them back on at any time from your account settings."
+    resubscribe_button: Resubscribe
+    resubscribed_title: You are subscribed again
+    resubscribed_text: "You will receive news and announcements from {forumTitle} again."
+    invalid_title: This link is no longer valid
+    invalid_text: "It may be for an email address that has since changed. You can manage your email preferences from your account settings."
+    manage: Go to your settings
