@@ -3,7 +3,7 @@ import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
 import LinkButton from 'flarum/common/components/LinkButton';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
-import TextEditor from 'flarum/common/components/TextEditor';
+import HeraldTextEditor from './HeraldTextEditor';
 import extractText from 'flarum/common/utils/extractText';
 import QuickTags, { QuickTag } from './QuickTags';
 import RecipientFilters from './RecipientFilters';
@@ -36,7 +36,6 @@ export default class HeraldEditPage extends Page {
   dirty = false;
   saving = false;
   testing = false;
-  savedAt: Date | null = null;
 
   counts: Counts | null = null;
   countTimer?: number;
@@ -89,10 +88,27 @@ export default class HeraldEditPage extends Page {
     });
   }
 
+  /**
+   * Closing the tab or reloading with unsaved words asks first. (Core's
+   * ConfirmDocumentUnload is not exported to extensions in Flarum 2, so this
+   * is the same few lines it would have been.)
+   */
+  unloadGuard = (e: BeforeUnloadEvent) => {
+    if (!this.dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  };
+
+  oncreate(vnode: any) {
+    super.oncreate(vnode);
+    window.addEventListener('beforeunload', this.unloadGuard);
+  }
+
   onremove(vnode: any) {
     super.onremove(vnode);
     this.removed = true;
     clearTimeout(this.countTimer);
+    window.removeEventListener('beforeunload', this.unloadGuard);
   }
 
   view() {
@@ -112,13 +128,25 @@ export default class HeraldEditPage extends Page {
       <div className="HeraldPage HeraldEditPage container">
         <div className="HeraldPage-header">
           <div>
-            <LinkButton className="Button Button--link HeraldPage-back" icon="fas fa-arrow-left" href={app.route('herald')}>
+            <LinkButton
+              className="Button Button--link HeraldPage-back"
+              icon="fas fa-arrow-left"
+              href={app.route('herald')}
+              onclick={(e: MouseEvent) => {
+                if (this.dirty && !confirm(extractText(t('edit.unsaved_warning')))) e.preventDefault();
+              }}
+            >
               {t('edit.back')}
             </LinkButton>
-            <h2>
-              {this.id ? this.subject || t('edit.untitled') : t('edit.new_title')} {this.mailing ? <StatusBadge mailing={this.mailing} /> : null}
-            </h2>
+            {/* The badge sits BESIDE the heading, not in it, or a theme's
+                heading font (often condensed, sometimes uppercase) dresses
+                the badge too. */}
+            <div className="HeraldPage-titleRow">
+              <h2 className="HeraldPage-title">{this.id ? this.subject || t('edit.untitled') : t('edit.new_title')}</h2>
+              {this.mailing ? <StatusBadge mailing={this.mailing} /> : null}
+            </div>
           </div>
+          {this.mailing?.status === 'sending' ? null : this.actions()}
         </div>
 
         {this.mailing?.status === 'sending' ? this.progressView() : this.formView()}
@@ -131,13 +159,12 @@ export default class HeraldEditPage extends Page {
       <div className="HeraldEditPage-form">
         {this.mailing && this.mailing.status !== 'draft' ? this.summary() : null}
 
-        <nav className="HeraldTabs">
+        <nav className="HeraldTabs" role="tablist">
           {this.tabButton('content', 'fas fa-pen', t('edit.tab_content'))}
-          {this.tabButton(
-            'recipients',
-            'fas fa-users',
-            [t('edit.tab_recipients'), this.counts ? <span className="HeraldTabs-count">{this.counts.reach.toLocaleString(app.data.locale)}</span> : null]
-          )}
+          {this.tabButton('recipients', 'fas fa-users', [
+            t('edit.tab_recipients'),
+            this.counts ? <span className="HeraldTabs-count">{this.counts.reach.toLocaleString(app.data.locale)}</span> : null,
+          ])}
         </nav>
 
         <div className="HeraldEditPage-tab" hidden={this.tab !== 'content'}>
@@ -162,7 +189,7 @@ export default class HeraldEditPage extends Page {
               <div className="Form-group">
                 <label>{t('edit.content')}</label>
                 <div className="HeraldEditor-editor" onfocusin={() => (this.lastFocus = 'content')}>
-                  <TextEditor
+                  <HeraldTextEditor
                     composer={this.composer}
                     value={this.content}
                     placeholder={extractText(t('edit.content_placeholder'))}
@@ -172,7 +199,6 @@ export default class HeraldEditPage extends Page {
                       this.dirty = true;
                     }}
                     onsubmit={() => this.save()}
-                    preview={() => this.preview()}
                   />
                 </div>
               </div>
@@ -195,33 +221,55 @@ export default class HeraldEditPage extends Page {
             <aside className="HeraldRecipients-count">{this.countCard()}</aside>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        <div className="HeraldActions">
-          <span className="HeraldActions-state">
-            {this.dirty ? t('edit.unsaved') : this.savedAt ? t('edit.saved') : null}
-          </span>
-          <Button className="Button" icon="far fa-save" loading={this.saving} onclick={() => this.save()}>
-            {t('edit.save')}
-          </Button>
-          <Button className="Button" icon="far fa-eye" onclick={() => this.preview()}>
-            {t('edit.preview')}
-          </Button>
-          <Button className="Button" icon="fas fa-vial" loading={this.testing} onclick={() => this.test()}>
-            {t('edit.test')}
-          </Button>
-          <Button className="Button Button--primary" icon="fas fa-paper-plane" onclick={() => this.openSend()}>
-            {this.mailing && this.mailing.status !== 'draft' ? t('edit.resend') : t('edit.send')}
-          </Button>
-        </div>
+  /**
+   * In the header, not a bar pinned to the bottom of the screen: that corner
+   * is where themes and extensions float their own buttons (scroll-to-top,
+   * chat, who's online), and a pinned Send button ends up underneath one.
+   */
+  actions() {
+    return (
+      <div className="HeraldActions">
+        {/* The button carries the saved state itself, so nothing appears
+            beside it and the header never reflows while someone types. */}
+        <Button
+          className="Button HeraldActions-save"
+          icon={!this.dirty && this.id ? 'fas fa-check' : 'far fa-save'}
+          loading={this.saving}
+          disabled={!this.dirty && !!this.id}
+          aria-live="polite"
+          onclick={() => this.save()}
+        >
+          {!this.dirty && this.id ? t('edit.saved') : t('edit.save')}
+        </Button>
+        <Button className="Button" icon="far fa-eye" onclick={() => this.preview()}>
+          {t('edit.preview')}
+        </Button>
+        <Button className="Button HeraldActions-test" icon="fas fa-vial" loading={this.testing} onclick={() => this.test()}>
+          {t('edit.test')}
+        </Button>
+        <Button className="Button Button--primary" icon="fas fa-paper-plane" onclick={() => this.openSend()}>
+          {this.mailing && this.mailing.status !== 'draft' ? t('edit.resend') : t('edit.send')}
+        </Button>
       </div>
     );
   }
 
   tabButton(key: 'content' | 'recipients', icon: string, label: any) {
     return (
-      <Button className={`HeraldTabs-tab ${this.tab === key ? 'active' : ''}`} icon={icon} onclick={() => (this.tab = key)}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={this.tab === key}
+        className={`HeraldTabs-tab ${this.tab === key ? 'active' : ''}`}
+        onclick={() => (this.tab = key)}
+      >
+        <i className={`${icon} HeraldTabs-icon`} aria-hidden="true" />
         {label}
-      </Button>
+      </button>
     );
   }
 
@@ -273,15 +321,11 @@ export default class HeraldEditPage extends Page {
             done: done.toLocaleString(app.data.locale),
             total: mailing.recipientTotal.toLocaleString(app.data.locale),
           })}
-          {mailing.failedCount ? <span className="HeraldProgress-failed"> · {t('progress.failed', { count: mailing.failedCount })}</span> : null}
+          {mailing.failedCount ? (
+            <span className="HeraldProgress-failed"> · {t('progress.failed', { count: mailing.failedCount })}</span>
+          ) : null}
         </div>
-        <div
-          className="HeraldProgress-bar"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={pct}
-        >
+        <div className="HeraldProgress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
           <div className="HeraldProgress-fill" style={{ width: pct + '%' }} />
         </div>
         <p className="helpText">{this.background ? t('progress.background') : t('progress.keep_open')}</p>
@@ -303,7 +347,10 @@ export default class HeraldEditPage extends Page {
       el.setSelectionRange(start + text.length, start + text.length);
       el.focus();
     } else if (this.composer.editor) {
-      this.composer.editor.insertAtCursor(text, false);
+      // escape = true: a tag is literal TEXT. Rich editors treat an
+      // unescaped insert as Markdown to parse, and FoF Rich Text turns
+      // "{member_name}" into new paragraphs with the brace left behind.
+      this.composer.editor.insertAtCursor(text, true);
     }
 
     this.dirty = true;
@@ -338,7 +385,6 @@ export default class HeraldEditPage extends Page {
         this.id = data.id;
         this.mailing = data;
         this.dirty = false;
-        this.savedAt = new Date();
 
         // A new mailing gets its own address without remounting the page —
         // a route change would rebuild the editor mid-sentence.
@@ -351,10 +397,34 @@ export default class HeraldEditPage extends Page {
   }
 
   preview() {
-    app.modal.show(PreviewModal, { subject: this.subject, content: this.content });
+    // Unchanged since it was saved: preview what is stored, which is what
+    // would be sent. Otherwise preview the words on screen.
+    app.modal.show(PreviewModal, this.id && !this.dirty ? { id: this.id } : { subject: this.subject, content: this.content });
+  }
+
+  /**
+   * Whether there is something to send, and if not, says what is missing and
+   * shows the tab where it goes.
+   */
+  ready(): boolean {
+    if (!this.subject.trim()) {
+      this.tab = 'content';
+      app.alerts.show({ type: 'error' }, t('errors.subject_required'));
+      return false;
+    }
+
+    if (!this.content.trim()) {
+      this.tab = 'content';
+      app.alerts.show({ type: 'error' }, t('errors.content_required'));
+      return false;
+    }
+
+    return true;
   }
 
   test() {
+    if (!this.ready()) return;
+
     this.testing = true;
 
     this.save()
@@ -367,17 +437,7 @@ export default class HeraldEditPage extends Page {
   }
 
   openSend() {
-    if (!this.subject.trim()) {
-      this.tab = 'content';
-      app.alerts.show({ type: 'error' }, t('errors.subject_required'));
-      return;
-    }
-
-    if (!this.content.trim()) {
-      this.tab = 'content';
-      app.alerts.show({ type: 'error' }, t('errors.content_required'));
-      return;
-    }
+    if (!this.ready()) return;
 
     this.save().then(() =>
       app.modal.show(SendModal, {

@@ -8,6 +8,8 @@ import ItemList from 'flarum/common/utils/ItemList';
 import { t } from './util';
 
 export { default as extend } from './extend';
+export { default as RecipientFilters } from './components/RecipientFilters';
+export { default as QuickTags } from './components/QuickTags';
 
 app.initializers.add('ernestdefoe/herald', () => {
   extend(SessionDropdown.prototype, 'items', function (items: ItemList<any>) {
@@ -51,8 +53,8 @@ app.initializers.add('ernestdefoe/herald', () => {
             }}
           >
             {t('settings.label', { forumTitle: app.forum.attribute('title') })}
+            <span className="helpText">{t('settings.help')}</span>
           </Switch>
-          <p className="helpText">{t('settings.help')}</p>
         </div>
       </FieldSet>,
       75

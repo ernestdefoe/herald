@@ -25,9 +25,9 @@ class Sender
      */
     public function send(User $user, Template $template, array $values, array $urlTags): void
     {
-        $subject = $this->personaliser->text($template->subject, $values);
+        $subject = $this->personaliser->text($template->subject, $values, $urlTags);
         $html = $this->personaliser->html($template->html, $values, $urlTags);
-        $text = $this->personaliser->text($template->text, $values);
+        $text = $this->personaliser->text($template->text, $values, $urlTags);
         $unsubscribe = $values['unsubscribe_url'] ?? null;
         $replyTo = trim((string) $this->settings->get(Settings::REPLY_TO));
 

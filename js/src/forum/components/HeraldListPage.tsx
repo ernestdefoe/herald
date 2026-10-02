@@ -1,9 +1,9 @@
 import app from 'flarum/forum/app';
 import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
-import LinkButton from 'flarum/common/components/LinkButton';
 import Link from 'flarum/common/components/Link';
 import Dropdown from 'flarum/common/components/Dropdown';
+import Separator from 'flarum/common/components/Separator';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import humanTime from 'flarum/common/helpers/humanTime';
 import extractText from 'flarum/common/utils/extractText';
@@ -62,9 +62,12 @@ export default class HeraldListPage extends Page {
             <h2>{t('list.title')}</h2>
             <p className="helpText">{t('list.intro')}</p>
           </div>
-          <LinkButton className="Button Button--primary" icon="fas fa-plus" href={app.route('herald.new')}>
+          {/* A Button, not a LinkButton: a theme's `a { color }` rule can
+              out-rank .Button--primary on an anchor and paint the label the
+              colour of its own background. */}
+          <Button className="Button Button--primary" icon="fas fa-plus" onclick={() => m.route.set(app.route('herald.new'))}>
             {t('list.create')}
-          </LinkButton>
+          </Button>
         </div>
 
         {this.mailings === null ? <LoadingIndicator /> : this.mailings.length ? this.table(this.mailings) : this.empty()}
@@ -107,9 +110,13 @@ export default class HeraldListPage extends Page {
                 {mailing.status === 'draft'
                   ? '—'
                   : `${mailing.sentCount.toLocaleString(app.data.locale)} / ${mailing.recipientTotal.toLocaleString(app.data.locale)}`}
-                {mailing.failedCount ? <div className="HeraldTable-failed">{t('progress.failed', { count: mailing.failedCount })}</div> : null}
+                {mailing.failedCount ? (
+                  <div className="HeraldTable-failed">{t('progress.failed', { count: mailing.failedCount })}</div>
+                ) : null}
               </td>
-              <td className="HeraldTable-date">{humanTime(new Date(mailing.completedAt || mailing.startedAt || mailing.createdAt || Date.now()))}</td>
+              <td className="HeraldTable-date">
+                {humanTime(new Date(mailing.completedAt || mailing.startedAt || mailing.createdAt || Date.now()))}
+              </td>
               <td className="HeraldTable-actions">{this.actions(mailing)}</td>
             </tr>
           ))}
@@ -144,8 +151,9 @@ export default class HeraldListPage extends Page {
             {mailing.status === 'draft' ? t('edit.send') : t('edit.resend')}
           </Button>
         ) : null}
+        {!sending ? <Separator /> : null}
         {!sending ? (
-          <Button icon="far fa-trash-alt" className="Button HeraldTable-delete" onclick={() => this.delete(mailing)}>
+          <Button icon="far fa-trash-alt" className="HeraldTable-delete" onclick={() => this.delete(mailing)}>
             {t('list.delete')}
           </Button>
         ) : null}
@@ -154,13 +162,13 @@ export default class HeraldListPage extends Page {
   }
 
   preview(mailing: Mailing) {
-    api<{ data: Mailing }>('GET', `/mailings/${mailing.id}`).then(({ data }) =>
-      app.modal.show(PreviewModal, { subject: data.subject, content: data.content || '' })
-    );
+    app.modal.show(PreviewModal, { id: mailing.id });
   }
 
   copy(mailing: Mailing) {
-    api<{ data: Mailing }>('POST', `/mailings/${mailing.id}/copy`).then(({ data }) => m.route.set(app.route('herald.edit', { id: data.id })));
+    api<{ data: Mailing }>('POST', `/mailings/${mailing.id}/copy`).then(({ data }) =>
+      m.route.set(app.route('herald.edit', { id: data.id }))
+    );
   }
 
   delete(mailing: Mailing) {

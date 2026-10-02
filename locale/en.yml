@@ -23,6 +23,7 @@ ernestdefoe-herald:
       sending_percent: "Sending · {percent}%"
       sent: Sent
       cancelled: Cancelled
+      failed: Failed
 
     list:
       title: Bulk mail
@@ -50,12 +51,12 @@ ernestdefoe-herald:
       tab_content: Content
       tab_recipients: Recipients
       subject: Subject
-      subject_placeholder: "News from {suite_name}"
+      subject_placeholder: "News from '{suite_name}'"
       content: Message
-      content_placeholder: "Hi {member_name}, …"
+      content_placeholder: "Hi '{member_name}', …"
       save: Save
       saved: Saved
-      unsaved: Unsaved changes
+      unsaved_warning: "You have unsaved changes to this mailing. Leave without saving?"
       preview: Preview
       test: Send test to me
       test_sent: "A test was sent to {email}."
@@ -63,8 +64,8 @@ ernestdefoe-herald:
       resend: Send again…
       count_label: "{count, plural, one {member will receive this} other {members will receive this}}"
       consent_note: "Members who have opted out of news from the forum team, and members who have not confirmed their email address, are never sent bulk mail."
-      summary_sent: "Sent to {sent} of {total} members. Editing it and sending again sends to everyone who matches at that moment."
-      summary_cancelled: "Cancelled after {sent} of {total} members."
+      summary_sent: "{sent} of {total} sent. Edit it and send again to mail everyone who matches at that moment."
+      summary_cancelled: "Cancelled after {sent} of {total} were sent."
 
     tags:
       title: Quick tags
@@ -101,6 +102,7 @@ ernestdefoe-herald:
       discussions: Discussions
       at_least: At least
       at_most: At most
+      any: Any
       suspended: Suspended members
       suspended_include: Include suspended members
 

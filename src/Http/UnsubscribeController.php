@@ -59,12 +59,20 @@ class UnsubscribeController implements RequestHandlerInterface
         return $this->page($user->herald_subscribed ? 'confirm' : 'unsubscribed', $user);
     }
 
+    private function colour(string $value): string
+    {
+        return preg_match('/^#[0-9a-f]{3}([0-9a-f]{3})?$/i', $value) ? $value : '#4d698e';
+    }
+
     private function page(string $state, ?User $user, int $status = 200): ResponseInterface
     {
         return new HtmlResponse($this->views->make('ernestdefoe-herald::unsubscribe', [
             'state' => $state,
             'action' => $user ? $this->token->url($user) : null,
             'forumTitle' => (string) $this->settings->get('forum_title'),
+            // The forum's own brand colour, so the page reads as the forum's
+            // and not as some third party's.
+            'accent' => $this->colour((string) $this->settings->get('theme_primary_color')),
             'forumUrl' => $this->url->to('forum')->base(),
             'settingsUrl' => $this->url->to('forum')->route('settings'),
             'translator' => $this->translator,

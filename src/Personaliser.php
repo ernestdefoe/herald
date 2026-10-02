@@ -26,37 +26,43 @@ class Personaliser
      */
     public function html(string $html, array $values, array $urlTags): string
     {
+        $escape = fn (string $value) => htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return strtr($html, $this->map($values, $urlTags, $escape));
+    }
+
+    /**
+     * The plain-text half, and the subject. Links there are written out as
+     * "text (address)", so the encoded shape turns up here too.
+     *
+     * @param array<string, string> $values
+     * @param string[] $urlTags
+     */
+    public function text(string $text, array $values, array $urlTags = []): string
+    {
+        return strtr($text, $this->map($values, $urlTags, fn (string $value) => $value));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function map(array $values, array $urlTags, callable $escape): array
+    {
         $replace = [];
 
         foreach ($values as $name => $value) {
-            $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $value = (string) $value;
 
-            $replace['{'.$name.'}'] = $escaped;
+            $replace['{'.$name.'}'] = $escape($value);
 
             // Inside an address: a URL tag goes in as the URL it is, anything
             // else is a path segment and gets encoded like one.
-            $inUrl = in_array($name, $urlTags, true)
-                ? $escaped
-                : htmlspecialchars(rawurlencode($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $inUrl = $escape(in_array($name, $urlTags, true) ? $value : rawurlencode($value));
 
             $replace['%7B'.$name.'%7D'] = $inUrl;
             $replace['%7b'.$name.'%7d'] = $inUrl;
         }
 
-        return strtr($html, $replace);
-    }
-
-    /**
-     * @param array<string, string> $values
-     */
-    public function text(string $text, array $values): string
-    {
-        $replace = [];
-
-        foreach ($values as $name => $value) {
-            $replace['{'.$name.'}'] = $value;
-        }
-
-        return strtr($text, $replace);
+        return $replace;
     }
 }

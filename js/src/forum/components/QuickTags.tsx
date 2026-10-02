@@ -40,9 +40,7 @@ export default class QuickTags extends Component<QuickTagsAttrs> {
           ))}
         </ul>
         {aliases.length ? (
-          <p className="helpText HeraldQuickTags-aliases">
-            {t('tags.aliases', { aliases: aliases.map((a) => `{${a}}`).join(', ') })}
-          </p>
+          <p className="helpText HeraldQuickTags-aliases">{t('tags.aliases', { aliases: aliases.map((a) => `{${a}}`).join(', ') })}</p>
         ) : null}
       </div>
     );

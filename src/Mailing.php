@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Flarum\Database\AbstractModel;
 use Flarum\Formatter\Formatter;
 use Flarum\User\User;
+use TypeError;
 
 /**
  * One bulk email.
@@ -87,7 +88,32 @@ class Mailing extends AbstractModel
      */
     public function renderBody(): string
     {
-        return $this->content ? static::$formatter->render($this->content, $this) : '';
+        if (! $this->content) {
+            return '';
+        }
+
+        try {
+            return static::$formatter->render($this->content, $this);
+        } catch (TypeError $e) {
+            /*
+             * 🚨 Flarum's formatter is two halves that must agree: a SERIALIZED
+             * renderer in the cache and the generated class file it is an
+             * instance of, in storage/formatter. A cache:clear racing a request
+             * can delete the file and leave the cache entry, and from then on
+             * every render throws "__PHP_Incomplete_Class returned" — nothing
+             * self-heals, because the entry is cached forever.
+             *
+             * A mailing mid-send would mark every remaining member as failed.
+             * Forgetting the entry makes the next render rebuild both halves.
+             */
+            if (! str_contains($e->getMessage(), '__PHP_Incomplete_Class')) {
+                throw $e;
+            }
+
+            static::$formatter->flush();
+
+            return static::$formatter->render($this->content, $this);
+        }
     }
 
     public function creator()

@@ -7,21 +7,37 @@
 
 .HeraldPage-header {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
   margin-bottom: 20px;
+
+  > div:first-child {
+    min-width: 0;
+    flex: 1 1 280px;
+  }
 
   h2 {
     margin: 0 0 4px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
   }
 
   .helpText {
     margin: 0;
+  }
+}
+
+.HeraldPage-titleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+
+  .HeraldPage-title {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -50,6 +66,11 @@
 
   &--sent {
     background: var(--success-color, #28a745);
+    color: #fff;
+  }
+
+  &--failed {
+    background: var(--error-color);
     color: #fff;
   }
 
@@ -114,10 +135,14 @@
     text-align: right;
   }
 
-  .HeraldTable-delete {
+  .HeraldTable-delete,
+  .HeraldTable-delete .icon {
     color: var(--error-color);
   }
 
+  // On a phone each row is its own little grid. The right-hand column is a
+  // FIXED width: sized by content, every row would size it differently and
+  // the action buttons would not line up down the list.
   @media @phone {
     thead,
     .HeraldTable-date {
@@ -126,27 +151,32 @@
 
     tr {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) 110px;
+      align-items: center;
+      column-gap: 12px;
+      padding: 10px 0;
       border-bottom: 1px solid var(--control-bg);
-      padding: 8px 0;
     }
 
     td {
       border: 0;
-      padding: 4px 0;
+      padding: 3px 0;
     }
 
     .HeraldTable-subject {
-      grid-column: 1 / 2;
+      grid-column: 1;
+      grid-row: 1;
     }
 
     .HeraldTable-actions {
       grid-column: 2;
       grid-row: 1;
+      width: auto;
+      justify-self: end;
     }
 
     .HeraldTable-num {
-      text-align: left;
+      justify-self: end;
     }
   }
 }
@@ -173,12 +203,22 @@
   margin-bottom: 20px;
 
   &-tab {
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    background: transparent;
-    color: var(--muted-color);
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: none;
+    border: 0;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
+    color: var(--muted-color);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-color);
+    }
 
     &.active {
       color: var(--primary-color);
@@ -187,7 +227,6 @@
   }
 
   &-count {
-    margin-left: 6px;
     font-size: 11px;
     padding: 2px 7px;
     border-radius: 999px;
@@ -211,6 +250,10 @@
 
   @media @phone {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .Form-group {
+    margin-bottom: 18px;
   }
 
   .Form-group > label {
@@ -238,9 +281,11 @@
   }
 
   // 🚨 The editable element is .TextEditor-editor — a textarea under the
-  // Markdown editor, a contenteditable div under the rich ones.
-  .TextEditor-editor,
-  .ProseMirror {
+  // Markdown editor, a contenteditable wrapper under the rich ones. Style
+  // THAT, and only that: a rich editor's inner .ProseMirror sits inside it,
+  // and giving both padding and a min-height doubles the inset and pushes
+  // the inner box out through the bottom of the frame.
+  .TextEditor-editor {
     min-height: 320px;
     box-sizing: border-box;
     width: 100%;
@@ -249,6 +294,13 @@
     padding: 14px;
     resize: vertical;
     background: transparent;
+    box-shadow: none;
+  }
+
+  .TextEditor-editor .ProseMirror {
+    min-height: 290px;
+    padding: 0;
+    outline: none;
   }
 
   .TextEditor-controls {
@@ -270,8 +322,6 @@
 }
 
 .HeraldQuickTags {
-  position: sticky;
-  top: calc(var(--header-height, 56px) + 16px);
   border: 1px solid var(--control-bg);
   border-radius: var(--border-radius);
   padding: 14px;
@@ -283,10 +333,8 @@
 
   &-list {
     list-style: none;
-    margin: 10px 0 0;
+    margin: 10px -8px 0;
     padding: 0;
-    max-height: 60vh;
-    overflow-y: auto;
   }
 
   &-tag {
@@ -324,10 +372,6 @@
     margin: 10px 0 0;
     font-size: 12px;
   }
-
-  @media @phone {
-    position: static;
-  }
 }
 
 // ---- recipients ------------------------------------------------------------
@@ -360,21 +404,29 @@
   }
 
   .helpText {
-    margin: 6px 0;
+    margin: 0 0 8px;
   }
 
   &-checks {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 16px;
-    margin-bottom: 8px;
+    gap: 8px 18px;
+
+    & + .helpText {
+      margin-top: 16px;
+    }
   }
 
   &-check {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     cursor: pointer;
+    line-height: 1.3;
+
+    input {
+      margin: 0;
+    }
   }
 
   &-swatch {
@@ -415,9 +467,16 @@
   }
 }
 
-.HeraldCount {
+.HeraldRecipients-count {
   position: sticky;
-  top: calc(var(--header-height, 56px) + 16px);
+  top: calc(var(--header-height, 56px) + 20px);
+
+  @media @phone {
+    position: static;
+  }
+}
+
+.HeraldCount {
   border-radius: var(--border-radius);
   padding: 18px;
   background: var(--control-bg);
@@ -438,33 +497,48 @@
   .helpText {
     text-align: left;
     font-size: 12px;
-  }
-
-  @media @phone {
-    position: static;
+    margin: 8px 0 0;
   }
 }
 
 // ---- actions ---------------------------------------------------------------
 
 .HeraldActions {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
-  margin-top: 24px;
-  padding: 12px 0;
-  background: var(--body-bg);
-  border-top: 1px solid var(--control-bg);
+  flex-shrink: 0;
 
-  &-state {
-    margin-right: auto;
-    font-size: 13px;
-    color: var(--muted-color);
+  // Wide enough for either label, so Save ⇄ Saved does not nudge its
+  // neighbours.
+  &-save {
+    min-width: 96px;
+    justify-content: center;
+  }
+
+  // Four buttons do not fit a phone's width in a row: two by two, each
+  // taking half, Send last and full width.
+  @media @phone {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    flex-shrink: 1;
+
+    .Button {
+      width: 100%;
+      min-width: 0;
+      justify-content: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .HeraldActions-test,
+    .Button--primary {
+      grid-column: span 2;
+    }
   }
 }
 
@@ -525,6 +599,7 @@
   display: block;
   width: 100%;
   height: 60vh;
+  max-height: none;
   border: 1px solid var(--control-bg);
   border-radius: var(--border-radius);
   background: #fff;
@@ -535,6 +610,21 @@
   font-weight: 700;
   text-align: center;
   margin: 0;
+}
+
+.HeraldSendModal .Modal-body {
+  text-align: center;
+
+  // Core's .Form--centered left-aligns help text; this modal is one centred
+  // column and every line in it should sit on the same axis.
+  .Form .helpText {
+    text-align: center;
+    margin: 0 0 12px;
+  }
+
+  .Form .Form-group {
+    margin: 6px 0 0;
+  }
 }
 
 .HeraldSend-subject {

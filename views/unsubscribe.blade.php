@@ -9,8 +9,8 @@
     <meta name="robots" content="noindex">
     <title>{{ $t('title') }} · {{ $forumTitle }}</title>
     <style>
-        :root { color-scheme: light dark; --bg: #f3f5f7; --card: #fff; --text: #222; --muted: #667; --line: #e1e4e8; --accent: #b8572a; }
-        @media (prefers-color-scheme: dark) { :root { --bg: #16181c; --card: #1f2227; --text: #e8e8e8; --muted: #9aa0a6; --line: #30343a; --accent: #e07a4a; } }
+        :root { color-scheme: light dark; --bg: #f3f5f7; --card: #fff; --text: #222; --muted: #667; --line: #e1e4e8; --accent: {{ $accent }}; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #16181c; --card: #1f2227; --text: #e8e8e8; --muted: #9aa0a6; --line: #30343a; } }
         body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         main { max-width: 460px; margin: 12vh auto 0; padding: 0 16px; }
         .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 28px; }

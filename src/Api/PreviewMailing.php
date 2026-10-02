@@ -30,11 +30,20 @@ class PreviewMailing extends Controller
     {
         $body = $this->body($request);
 
-        $mailing = new Mailing();
-        $mailing->id = 0;
-        $mailing->updated_at = Carbon::now();
-        $mailing->subject = trim((string) ($body['subject'] ?? ''));
-        $mailing->setSource((string) ($body['content'] ?? ''), $actor);
+        if (isset($body['id']) && ! array_key_exists('content', $body)) {
+            // A saved mailing previews from what is STORED, exactly as it
+            // would be sent. Re-parsing its source would run it through
+            // whichever editor the forum uses today — a mailing written in
+            // Markdown, previewed after a switch to a rich editor, would show
+            // its asterisks.
+            $mailing = Mailing::query()->findOrFail((int) $body['id']);
+        } else {
+            $mailing = new Mailing();
+            $mailing->id = 0;
+            $mailing->updated_at = Carbon::now();
+            $mailing->subject = trim((string) ($body['subject'] ?? ''));
+            $mailing->setSource((string) ($body['content'] ?? ''), $actor);
+        }
 
         $template = $this->renderer->template($mailing, $this->locale->for($actor));
         $values = $this->tags->values(collect([$actor]))[$actor->id] ?? [];

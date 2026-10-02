@@ -3,8 +3,11 @@ import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import { api, t } from '../util';
 
 interface PreviewModalAttrs extends IInternalModalAttrs {
-  subject: string;
-  content: string;
+  /** A saved mailing, previewed exactly as stored… */
+  id?: number;
+  /** …or unsaved words straight from the editor. */
+  subject?: string;
+  content?: string;
 }
 
 /**
@@ -19,7 +22,9 @@ export default class PreviewModal extends Modal<PreviewModalAttrs> {
   oninit(vnode: any) {
     super.oninit(vnode);
 
-    api('POST', '/preview', { subject: this.attrs.subject, content: this.attrs.content })
+    const body = this.attrs.id ? { id: this.attrs.id } : { subject: this.attrs.subject, content: this.attrs.content };
+
+    api('POST', '/preview', body)
       .then((preview: any) => {
         this.preview = preview;
         m.redraw();
@@ -57,15 +62,14 @@ export default class PreviewModal extends Modal<PreviewModalAttrs> {
           title={t('preview.title')}
           onload={(e: Event) => {
             // Size the frame to the email, so the modal scrolls rather than
-            // a frame within a frame.
+            // a frame within a frame. Collapse it first: a document's
+            // scrollHeight is never less than the frame it sits in, so
+            // measuring at full height would always answer "full height".
             const frame = e.target as HTMLIFrameElement;
-            try {
-              const doc = frame.contentDocument;
-              if (doc) frame.style.height = Math.max(200, doc.documentElement.scrollHeight + 20) + 'px';
-            } catch (_) {
-              // A sandbox without allow-same-origin cannot be measured; the
-              // CSS height stands.
-            }
+            const doc = frame.contentDocument;
+            if (!doc) return;
+            frame.style.height = '0px';
+            frame.style.height = Math.max(160, doc.documentElement.scrollHeight) + 'px';
           }}
         />
       </div>

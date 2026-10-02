@@ -1,6 +1,6 @@
 import app from 'flarum/admin/app';
 import Admin from 'flarum/common/extenders/Admin';
-import LinkButton from 'flarum/common/components/LinkButton';
+import Button from 'flarum/common/components/Button';
 
 function t(key: string, params: Record<string, any> = {}): any {
   return app.translator.trans(`ernestdefoe-herald.admin.${key}`, params);
@@ -22,9 +22,13 @@ export default [
       return (
         <div className="Form-group HeraldAdmin-intro">
           <p>{t('intro')}</p>
-          <LinkButton className="Button Button--primary" icon="fas fa-bullhorn" href={app.forum.attribute('baseUrl') + '/herald'} external={true} target="_blank">
+          <Button
+            className="Button Button--primary"
+            icon="fas fa-bullhorn"
+            onclick={() => window.open(app.forum.attribute('baseUrl') + '/herald', '_blank')}
+          >
             {t('open')}
-          </LinkButton>
+          </Button>
         </div>
       );
     })
@@ -58,7 +62,9 @@ export default [
         <div className="Form-group">
           <label>{t('sending_heading')}</label>
           <div className="helpText">{t('sending_help')}</div>
-          <pre className="HeraldAdmin-cron">* * * * * cd /path/to/flarum &amp;&amp; php flarum schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</pre>
+          <pre className="HeraldAdmin-cron">
+            * * * * * cd /path/to/flarum &amp;&amp; php flarum schedule:run &gt;&gt; /dev/null 2&gt;&amp;1
+          </pre>
         </div>
       );
     })
