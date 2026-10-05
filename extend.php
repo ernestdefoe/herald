@@ -18,6 +18,8 @@ use Flarum\User\User;
 return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
+        /** The staff pages are lazy chunks; Flarum only publishes them from a declared directory. */
+        ->jsDirectory(__DIR__.'/js/dist/forum')
         ->css(__DIR__.'/less/forum.less')
         ->route('/herald', 'herald')
         ->route('/herald/new', 'herald.new')
