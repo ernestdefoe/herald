@@ -27,7 +27,8 @@ export default class HeraldListPage extends Page {
     app.setTitle(extractText(t('list.title')));
     app.history.push('herald', extractText(t('list.title')));
 
-    this.load();
+    // No request a guest or member would only have refused (and then throw).
+    if (app.forum.attribute('canSendHeraldMail')) this.load();
   }
 
   onremove(vnode: any) {

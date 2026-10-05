@@ -64,6 +64,9 @@ export default class HeraldEditPage extends Page {
     app.setTitle(extractText(t('edit.title')));
     app.history.push('herald.edit', extractText(t('edit.title')));
 
+    // No request a guest or member would only have refused (and then throw).
+    if (!app.forum.attribute('canSendHeraldMail')) return;
+
     const loads: Promise<any>[] = [api<Meta>('GET', '/meta').then((meta) => (this.meta = meta))];
 
     if (this.id) {
