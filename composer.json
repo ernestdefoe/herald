@@ -19,6 +19,7 @@
     ],
     "homepage": "https://github.com/ernestdefoe/herald",
     "support": {
+        "forum": "https://discuss.flarum.org/d/39967-herald-built-using-ai",
         "issues": "https://github.com/ernestdefoe/herald/issues",
         "source": "https://github.com/ernestdefoe/herald"
     },
