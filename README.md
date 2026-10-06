@@ -493,6 +493,10 @@ email.
 - PHP **8.3** or later
 - A working mail configuration in **Admin → Email**
 
+## Discuss
+
+Questions, ideas and release notes: [Herald on discuss.flarum.org](https://discuss.flarum.org/d/39967-herald-built-using-ai).
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
