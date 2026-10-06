@@ -493,9 +493,11 @@ email.
 - PHP **8.3** or later
 - A working mail configuration in **Admin → Email**
 
-## Discuss
+## Support
 
-Questions, ideas and release notes: [Herald on discuss.flarum.org](https://discuss.flarum.org/d/39967-herald-built-using-ai).
+- **Support forum:** [Herald on ernestdefoe.online](https://ernestdefoe.online/d/103)
+- **Flarum community:** [Herald on discuss.flarum.org](https://discuss.flarum.org/d/39967-herald-built-using-ai)
+- **Bug reports:** [GitHub issues](https://github.com/ernestdefoe/herald/issues)
 
 ## Licence
 
