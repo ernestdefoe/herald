@@ -1,6 +1,6 @@
 <?php
 
-namespace ErnestDefoe\Herald\Tests;
+namespace ErnestDefoe\Herald\Tests\unit;
 
 use ErnestDefoe\Herald\Mail\EmailHtml;
 use PHPUnit\Framework\TestCase;
