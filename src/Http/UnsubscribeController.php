@@ -50,13 +50,13 @@ class UnsubscribeController implements RequestHandlerInterface
         if ($request->getMethod() === 'POST') {
             $resubscribe = Arr::get((array) $request->getParsedBody(), 'action') === 'resubscribe';
 
-            $user->herald_subscribed = $resubscribe;
+            $user->setAttribute('herald_subscribed', $resubscribe);
             $user->save();
 
             return $this->page($resubscribe ? 'resubscribed' : 'unsubscribed', $user);
         }
 
-        return $this->page($user->herald_subscribed ? 'confirm' : 'unsubscribed', $user);
+        return $this->page($user->getAttribute('herald_subscribed') ? 'confirm' : 'unsubscribed', $user);
     }
 
     private function colour(string $value): string

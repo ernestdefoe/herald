@@ -21,6 +21,8 @@ class Audience
 
     /**
      * Everyone the filters match, before consent is considered.
+     *
+     * @return Builder<User>
      */
     public function matching(array $filters): Builder
     {
@@ -36,6 +38,8 @@ class Audience
 
     /**
      * Everyone who will actually be sent it.
+     *
+     * @return Builder<User>
      */
     public function recipients(array $filters): Builder
     {

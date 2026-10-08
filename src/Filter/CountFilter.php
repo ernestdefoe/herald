@@ -32,11 +32,11 @@ class CountFilter implements Filter
 
     public function apply(Builder $query, array $config): void
     {
-        if (isset($config['min']) && $config['min'] !== '' && $config['min'] !== null) {
+        if (isset($config['min']) && $config['min'] !== '') {
             $query->where($this->column, '>=', max(0, (int) $config['min']));
         }
 
-        if (isset($config['max']) && $config['max'] !== '' && $config['max'] !== null) {
+        if (isset($config['max']) && $config['max'] !== '') {
             $query->where($this->column, '<=', max(0, (int) $config['max']));
         }
     }

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Flarum\Database\AbstractModel;
 use Flarum\Formatter\Formatter;
 use Flarum\User\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use TypeError;
 
 /**
@@ -33,6 +34,7 @@ use TypeError;
  * @property Carbon|null $completed_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property-read User|null $creator
  */
 class Mailing extends AbstractModel
 {
@@ -116,7 +118,8 @@ class Mailing extends AbstractModel
         }
     }
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

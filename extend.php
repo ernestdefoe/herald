@@ -61,7 +61,9 @@ return [
 
     (new Extend\Console())
         ->command(ProcessCommand::class)
-        ->schedule(ProcessCommand::class, fn ($event) => $event->everyMinute()->withoutOverlapping()),
+        ->schedule(ProcessCommand::class, function ($event) {
+            $event->everyMinute()->withoutOverlapping();
+        }),
 
     (new Extend\Settings())
         ->default(Settings::BATCH_SIZE, Settings::DEFAULT_BATCH_SIZE)
@@ -81,7 +83,7 @@ return [
             Schema\Boolean::make('heraldSubscribed')
                 ->visible(fn (User $user, Context $context) => $context->getActor()->id === $user->id)
                 ->writable(fn (User $user, Context $context) => $context->getActor()->id === $user->id)
-                ->get(fn (User $user) => (bool) $user->herald_subscribed)
-                ->set(fn (User $user, $value) => $user->herald_subscribed = (bool) $value),
+                ->get(fn (User $user) => (bool) $user->getAttribute('herald_subscribed'))
+                ->set(fn (User $user, $value) => $user->setAttribute('herald_subscribed', (bool) $value)),
         ]),
 ];

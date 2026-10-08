@@ -2,6 +2,7 @@
 
 namespace ErnestDefoe\Herald\Mail;
 
+use DOMAttr;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -46,7 +47,7 @@ class EmailHtml
         foreach (self::LINKABLE as $tag) {
             foreach (iterator_to_array($doc->getElementsByTagName($tag)) as $node) {
                 /** @var DOMElement $node */
-                $src = $node->getAttribute('src') ?: ($xpath->query('.//source/@src', $node)->item(0)?->nodeValue ?? '');
+                $src = $node->getAttribute('src') ?: ($xpath->query('.//source/@src', $node)->item(0)->nodeValue ?? '');
                 $src = $this->absolute($src, $baseUrl);
 
                 if ($src === '') {
@@ -64,7 +65,10 @@ class EmailHtml
         }
 
         foreach ($xpath->query('//*[@href] | //*[@src] | //*[@srcset]') as $node) {
-            /** @var DOMElement $node */
+            if (! $node instanceof DOMElement) {
+                continue; // an element query; never anything else
+            }
+
             foreach (['href', 'src'] as $attr) {
                 if ($node->hasAttribute($attr)) {
                     $node->setAttribute($attr, $this->absolute($node->getAttribute($attr), $baseUrl));
@@ -79,6 +83,10 @@ class EmailHtml
 
         // Event handlers and data attributes mean nothing outside the forum.
         foreach ($xpath->query('//@*') as $attr) {
+            if (! $attr instanceof DOMAttr) {
+                continue; // an attribute query; never anything else
+            }
+
             $name = strtolower($attr->nodeName);
 
             if (str_starts_with($name, 'on') || str_starts_with($name, 'data-')) {
@@ -89,7 +97,7 @@ class EmailHtml
         $root = $doc->getElementById('herald-root');
         $out = '';
 
-        foreach ($root?->childNodes ?? [] as $child) {
+        foreach ($root->childNodes ?? [] as $child) {
             $out .= $doc->saveHTML($child);
         }
 
