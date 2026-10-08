@@ -169,11 +169,7 @@ export default class RecipientFilters extends Component<RecipientFiltersAttrs> {
 
     return (
       <label className="HeraldFilter-check" key={`${list}-${group.id()}`}>
-        <input
-          type="checkbox"
-          checked={checked}
-          onchange={() => this.set('groups', list, checked ? ids.filter((x) => x !== id) : [...ids, id])}
-        />
+        <input type="checkbox" checked={checked} onchange={() => this.set('groups', list, checked ? ids.filter((x) => x !== id) : [...ids, id])} />
         <span className="HeraldFilter-swatch" style={{ background: group.color() || 'var(--muted-color)' }} />
         {group.namePlural()}
       </label>

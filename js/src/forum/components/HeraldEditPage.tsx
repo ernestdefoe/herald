@@ -324,9 +324,7 @@ export default class HeraldEditPage extends Page {
             done: done.toLocaleString(app.data.locale),
             total: mailing.recipientTotal.toLocaleString(app.data.locale),
           })}
-          {mailing.failedCount ? (
-            <span className="HeraldProgress-failed"> · {t('progress.failed', { count: mailing.failedCount })}</span>
-          ) : null}
+          {mailing.failedCount ? <span className="HeraldProgress-failed"> · {t('progress.failed', { count: mailing.failedCount })}</span> : null}
         </div>
         <div className="HeraldProgress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
           <div className="HeraldProgress-fill" style={{ width: pct + '%' }} />

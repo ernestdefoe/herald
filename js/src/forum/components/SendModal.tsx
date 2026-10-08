@@ -46,9 +46,7 @@ export default class SendModal extends Modal<SendModalAttrs> {
           <LoadingIndicator />
         ) : (
           <div className="Form Form--centered">
-            <p className="HeraldSend-reach">
-              {t('send.reach', { count: counts.reach, formatted: counts.reach.toLocaleString(app.data.locale) })}
-            </p>
+            <p className="HeraldSend-reach">{t('send.reach', { count: counts.reach, formatted: counts.reach.toLocaleString(app.data.locale) })}</p>
             <p className="HeraldSend-subject">“{this.attrs.subject}”</p>
             {counts.optedOut || counts.unconfirmed ? (
               <p className="helpText">

@@ -62,9 +62,7 @@ export default [
         <div className="Form-group">
           <label>{t('sending_heading')}</label>
           <div className="helpText">{t('sending_help')}</div>
-          <pre className="HeraldAdmin-cron">
-            * * * * * cd /path/to/flarum &amp;&amp; php flarum schedule:run &gt;&gt; /dev/null 2&gt;&amp;1
-          </pre>
+          <pre className="HeraldAdmin-cron">* * * * * cd /path/to/flarum &amp;&amp; php flarum schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</pre>
         </div>
       );
     })

@@ -111,13 +111,9 @@ export default class HeraldListPage extends Page {
                 {mailing.status === 'draft'
                   ? '—'
                   : `${mailing.sentCount.toLocaleString(app.data.locale)} / ${mailing.recipientTotal.toLocaleString(app.data.locale)}`}
-                {mailing.failedCount ? (
-                  <div className="HeraldTable-failed">{t('progress.failed', { count: mailing.failedCount })}</div>
-                ) : null}
+                {mailing.failedCount ? <div className="HeraldTable-failed">{t('progress.failed', { count: mailing.failedCount })}</div> : null}
               </td>
-              <td className="HeraldTable-date">
-                {humanTime(new Date(mailing.completedAt || mailing.startedAt || mailing.createdAt || Date.now()))}
-              </td>
+              <td className="HeraldTable-date">{humanTime(new Date(mailing.completedAt || mailing.startedAt || mailing.createdAt || Date.now()))}</td>
               <td className="HeraldTable-actions">{this.actions(mailing)}</td>
             </tr>
           ))}
@@ -167,9 +163,7 @@ export default class HeraldListPage extends Page {
   }
 
   copy(mailing: Mailing) {
-    api<{ data: Mailing }>('POST', `/mailings/${mailing.id}/copy`).then(({ data }) =>
-      m.route.set(app.route('herald.edit', { id: data.id }))
-    );
+    api<{ data: Mailing }>('POST', `/mailings/${mailing.id}/copy`).then(({ data }) => m.route.set(app.route('herald.edit', { id: data.id })));
   }
 
   delete(mailing: Mailing) {
