@@ -56,8 +56,17 @@ export default class Builder extends Component<BuilderAttrs> {
     this.selected = this.blocks[0]?.id || null;
   }
 
+  /** Undo and redo work wherever focus is on the page, except inside a text field (which has its own). */
+  keys = (e: KeyboardEvent) => this.shortcuts(e);
+
+  oncreate(vnode: Mithril.VnodeDOM<BuilderAttrs, this>) {
+    super.oncreate(vnode);
+    document.addEventListener('keydown', this.keys);
+  }
+
   onremove() {
     clearTimeout(this.previewTimer);
+    document.removeEventListener('keydown', this.keys);
   }
 
   view() {
@@ -65,7 +74,7 @@ export default class Builder extends Component<BuilderAttrs> {
     const block = this.blocks.find((b) => b.id === this.selected);
 
     return (
-      <div className="HeraldBuilder" onkeydown={(e: KeyboardEvent) => this.shortcuts(e)}>
+      <div className="HeraldBuilder">
         <div className="HeraldBuilder-toolbar">
           <div className="HeraldBuilder-history">
             <Button
@@ -159,12 +168,7 @@ export default class Builder extends Component<BuilderAttrs> {
         <div className="HeraldCanvas-email">
           <div className="HeraldCanvas-header">{logo ? <img src={logo} alt="" /> : <strong>{app.forum.attribute('title')}</strong>}</div>
           <ol className="HeraldCanvas-blocks" aria-label={extractText(tb('canvas'))}>
-            {this.blocks.length === 0 ? <li className={`HeraldCanvas-empty ${this.drag ? 'is-target' : ''}`}>{tb('canvas_empty')}</li> : null}
-            {this.blocks.map((block, index) => [
-              this.dropAt === index ? <li className="HeraldCanvas-drop" aria-hidden="true" /> : null,
-              this.card(block, index),
-            ])}
-            {this.dropAt === this.blocks.length && this.blocks.length ? <li className="HeraldCanvas-drop" aria-hidden="true" /> : null}
+            {this.canvasItems()}
           </ol>
           <div className="HeraldCanvas-footer" title={extractText(tb('footer_locked'))}>
             <i className="fas fa-lock" aria-hidden="true" /> {tb('footer_note')}
@@ -172,6 +176,30 @@ export default class Builder extends Component<BuilderAttrs> {
         </div>
       </div>
     );
+  }
+
+  /** Every child keyed: the drop line moves between cards as you drag. */
+  canvasItems(): Mithril.Children[] {
+    const drop = <li key="drop" className="HeraldCanvas-drop" aria-hidden="true" />;
+
+    if (!this.blocks.length) {
+      return [
+        <li key="empty" className={`HeraldCanvas-empty ${this.drag ? 'is-target' : ''}`}>
+          {tb('canvas_empty')}
+        </li>,
+      ];
+    }
+
+    const items: Mithril.Children[] = [];
+
+    this.blocks.forEach((block, index) => {
+      if (this.dropAt === index) items.push(drop);
+      items.push(this.card(block, index));
+    });
+
+    if (this.dropAt === this.blocks.length) items.push(drop);
+
+    return items;
   }
 
   card(block: Block, index: number) {
@@ -327,6 +355,8 @@ export default class Builder extends Component<BuilderAttrs> {
           <LoadingIndicator />
         ) : (
           <iframe
+            // A fresh frame per width: its height is measured once, on load.
+            key={this.mode}
             className="HeraldBuilder-frame"
             title={extractText(tb(`mode_${this.mode}`))}
             sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
@@ -550,6 +580,7 @@ export default class Builder extends Component<BuilderAttrs> {
     if (key === 'z' || key === 'y') {
       e.preventDefault();
       key === 'y' || e.shiftKey ? this.redo() : this.undo();
+      m.redraw();
     }
   }
 

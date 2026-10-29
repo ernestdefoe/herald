@@ -152,7 +152,7 @@ ernestdefoe-herald:
       suspended_include: Include suspended members
       guests: Newsletter subscribers
       guests_include: "{count, plural, one {Include the {formatted} guest who signed up from the newsletter widget} other {Include the {formatted} guests who signed up from the newsletter widget}}"
-      guests_help: "Only addresses confirmed from the subscriber's own inbox. The member filters above do not apply to them."
+      guests_help: "Only addresses confirmed from the subscriber's own inbox. The member filters below do not apply to them."
 
     preview:
       title: Preview

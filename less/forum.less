@@ -780,8 +780,14 @@
   }
 }
 
-.HeraldFilter--guests .Checkbox {
-  margin: 0;
+.HeraldFilter--guests {
+  .Checkbox {
+    margin: 0;
+  }
+
+  .helpText {
+    margin: 8px 0 0;
+  }
 }
 
 // ---- 2.0: the builder ------------------------------------------------------
@@ -1392,12 +1398,10 @@
 }
 
 .HeraldAttention {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--control-bg);
-
   .HeraldInspector + & {
-    margin-top: 6px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--control-bg);
   }
 
   ul {
@@ -1529,6 +1533,11 @@
 }
 
 .HeraldDeliveries {
+  > .helpText {
+    margin: 10px 0 14px;
+    font-size: 12px;
+  }
+
   &-head {
     display: flex;
     align-items: center;
@@ -1673,6 +1682,12 @@
     margin: 0;
     font-size: 13px;
     color: var(--error-color);
+  }
+
+  // Core's Button--block stretches only inside some containers; here, always.
+  .Button--block {
+    width: 100%;
+    justify-content: center;
   }
 
   &-note {
