@@ -94,19 +94,19 @@ export default [
       setting: key('widget_title'),
       label: t('widget_title_label'),
       type: 'text',
-      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.title', {}, true),
+      placeholder: app.translator.trans('ernestdefoe-herald.admin.widget_title_default', {}, true),
     }))
     .setting(() => ({
       setting: key('widget_text'),
       label: t('widget_text_label'),
       type: 'text',
-      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.text', {}, true),
+      placeholder: app.translator.trans('ernestdefoe-herald.admin.widget_text_default', {}, true),
     }))
     .setting(() => ({
       setting: key('widget_button'),
       label: t('widget_button_label'),
       type: 'text',
-      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.button', {}, true),
+      placeholder: app.translator.trans('ernestdefoe-herald.admin.widget_button_default', {}, true),
     }))
     .customSetting(function () {
       return (

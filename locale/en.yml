@@ -1,6 +1,6 @@
 ernestdefoe-herald:
   admin:
-    intro: "Herald sends bulk email to your members, the way Invision Community does. Mailings are written on the forum itself, in your forum's own editor, so open Herald there to write one."
+    intro: "Herald sends bulk email and newsletters to your members, the way Invision Community does. Mailings are written on the forum itself — in your forum's own editor or the newsletter builder — so open Herald there to write one."
     open: Open Herald
     batch_size_label: Emails per batch
     batch_size_help: "How many emails go out in each batch. Lower this if your mail provider limits how fast you can send."
@@ -22,6 +22,9 @@ ernestdefoe-herald:
     widget_title_label: Widget title
     widget_text_label: Widget text
     widget_button_label: Button text
+    widget_title_default: "=> ernestdefoe-herald.forum.signup.title"
+    widget_text_default: "=> ernestdefoe-herald.forum.signup.text"
+    widget_button_default: "=> ernestdefoe-herald.forum.signup.button"
     widget_name: Herald newsletter signup
 
   forum:

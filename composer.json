@@ -1,6 +1,6 @@
 {
     "name": "ernestdefoe/herald",
-    "description": "Bulk email for Flarum, the way Invision Community does it: write once in your forum's own editor, personalise with {member_name}-style quick tags, filter who gets it, and send in the background.",
+    "description": "Bulk email and newsletters for Flarum, the way Invision Community does it: write in your forum's own editor or a drag-and-drop builder, personalise with {member_name}-style quick tags, filter who gets it, schedule or repeat it, and let guests sign up from a widget.",
     "keywords": [
         "flarum",
         "flarum-extension",

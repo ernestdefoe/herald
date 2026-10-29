@@ -1,12 +1,14 @@
 # Herald
 
-**Bulk email for Flarum, the way Invision Community does it.**
+**Bulk email and newsletters for Flarum, the way Invision Community does it.**
 
-Write one message in your forum's own editor. Drop in quick tags like
-`{member_name}` and `{suite_name}`, choose who gets it, preview it as a member
-will see it, and send. Every member gets their own copy with their own name,
-join date and post count filled in, sent in the background, in batches your
-mail provider can cope with.
+Write one message in your forum's own editor, or design a newsletter from
+blocks with the drag-and-drop builder. Drop in quick tags like `{member_name}`
+and `{suite_name}`, choose who gets it, preview it as a member will see it, and
+send it now or on a date — once, or every day, week or month. Every member gets
+their own copy with their own name, join date and post count filled in, sent in
+the background, in batches your mail provider can cope with, with a record of
+what happened to each one. Guests can sign up too, from a widget.
 
 [![Flarum](https://img.shields.io/badge/Flarum-2.0-orange)](https://flarum.org)
 [![Licence](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
@@ -21,6 +23,11 @@ mail provider can cope with.
 - [What you get](#what-you-get)
 - [Installation](#installation)
 - [Writing and sending a mailing](#writing-and-sending-a-mailing)
+- [The newsletter builder](#the-newsletter-builder)
+- [Scheduling and repeats](#scheduling-and-repeats)
+- [Templates](#templates)
+- [The signup widget and guest subscribers](#the-signup-widget-and-guest-subscribers)
+- [Delivery records](#delivery-records)
 - [Quick tags](#quick-tags)
 - [Choosing recipients](#choosing-recipients)
 - [Consent and unsubscribing](#consent-and-unsubscribing)
@@ -42,11 +49,24 @@ If you have used **ACP → Members → Bulk Mail** in Invision Community, you
 already know how Herald works. It follows the same model and uses the same tag
 names.
 
-- **A list of every mailing**, with its status (draft, sending, sent,
-  cancelled), how many it reached and when. Each one can be edited, previewed,
-  copied, sent again or deleted.
-- **Your forum's own editor.** Markdown, FoF Rich Text or Scribe: whatever your
-  members write posts with, you write mailings with, toolbar and all.
+- **A list of every mailing**, with its status (draft, scheduled, sending,
+  sent, cancelled), how many it reached, what failed, and when the next one
+  goes. Each one can be edited, previewed, copied, saved as a template, sent
+  again or deleted.
+- **Your forum's own editor** for a quick mass email. Markdown, FoF Rich Text
+  or Scribe: whatever your members write posts with, you write mailings with,
+  toolbar and all.
+- **A drag-and-drop newsletter builder** for when you want something that looks
+  designed: a hero, text, images, buttons, social links, your latest
+  discussions and a sign-off, with a live desktop and phone preview of the real
+  email.
+- **Send now, or on a date,** once or repeating daily, weekly or monthly in the
+  time zone you choose.
+- **Templates,** including two starters: *Weekly digest* and *Announcement*.
+- **A newsletter signup widget** for Bespoke and FoF Forum Widgets. Members
+  subscribe with one click; guests confirm their address first.
+- **A delivery record for every recipient,** with automatic retries, a
+  *Resend to failed* button, and sending limits per minute, hour and day.
 - **Quick tags**, clicked into place from a panel beside the editor, in the
   subject line or the message.
 - **Recipient filters:** groups to include or leave out, join date, last visit,
@@ -87,6 +107,11 @@ php flarum migrate
 php flarum cache:clear
 ```
 
+Updating from 1.x keeps every mailing, filter and opt-out as it was, and
+unsubscribe links in emails you already sent keep working. 2.0 adds columns to
+the mailings table and two new tables (guest subscribers and delivery records),
+so do run `php flarum migrate`.
+
 ### Before your first real mailing
 
 1. **Check your forum's mail settings.** Send yourself a test from
@@ -98,15 +123,18 @@ php flarum cache:clear
 
 ## Writing and sending a mailing
 
-1. **Bulk mail → Create new.**
+1. **Bulk mail → Create new.** (Or **Design with the builder** — see
+   [The newsletter builder](#the-newsletter-builder).)
 2. **Content tab:** write a subject and a message. Click any quick tag to insert
-   it where your cursor is, in either field.
+   it where your cursor is, in either field. The optional **Preview text** is
+   the line most inboxes show after the subject.
 3. **Recipients tab:** narrow down who gets it. The count on the right updates
    as you go.
 4. **Preview** to see the finished email with your own details filled in.
 5. **Send test to me** to check it in a real inbox.
 6. **Send…** shows how many members it will reach. Confirm, and it starts
-   sending.
+   sending — or switch to **Schedule** to pick a date (see
+   [Scheduling and repeats](#scheduling-and-repeats)).
 
 A mailing can be sent again later. **Send again…** goes to everyone who matches
 the filters at that moment, the way Invision's resend does. **Copy** makes a new
@@ -115,6 +143,204 @@ draft from an existing mailing, for anything you send regularly.
 | Preview | Confirm |
 | --- | --- |
 | ![The preview, filled in with the admin's own details](screenshots/preview.png) | ![The confirmation, showing how many members the mailing will reach](screenshots/confirm.png) |
+
+**Preview** shows the email at desktop or phone width, filled in with your own
+details. Type a username into **Preview as…** to see it with that member's
+details instead.
+
+## The newsletter builder
+
+For a quick announcement, the editor is all you need. For a newsletter that
+looks designed, press **Design with the builder** — on the Bulk mail list, or on
+any new mailing. Whatever you had already written moves into a Text block.
+
+![The builder: blocks on the left, the email in the middle, the selected block's settings on the right](screenshots/builder.png)
+
+- **Drag a block** from the list on the left onto the email, or click it to add
+  it below the block you have selected.
+- **Drag blocks to reorder them.** From the keyboard: select a block and press
+  **Alt + ↑ / ↓** to move it, **↑ / ↓** to move between blocks, and **Delete**
+  to remove it. Screen readers hear where it went.
+- **Click a block** to change it on the right: its own settings, then the
+  spacing, background colour and *Hide on phones* every block has.
+- **Undo and redo** with the buttons or **Ctrl/Cmd + Z** and
+  **Shift + Ctrl/Cmd + Z**.
+- **It saves itself** a couple of seconds after each change.
+- **Needs attention** lists anything that would go out broken: no subject, an
+  image without a description, a button without a link.
+- **Desktop preview** and **Mobile preview** show the real email, rendered on
+  your server by the same code that sends it — not a drawing of it.
+
+| Desktop preview | Mobile preview |
+| --- | --- |
+| ![The real email at desktop width](screenshots/builder-preview.png) | ![The same email at phone width](screenshots/builder-mobile.png) |
+
+### The blocks
+
+| Block | What it is |
+| --- | --- |
+| **Hero** | A big heading, a few words, an optional image and a button. |
+| **Text** | Paragraphs with **bold**, *italic* and links. |
+| **Image** | One picture, optionally a link, at a width you choose. |
+| **Image + text** | A picture beside a heading and some text. Stacks on phones. |
+| **Button** / **Buttons** | One call to action, or up to four in a row. |
+| **Divider** / **Spacer** | A line, or empty space. |
+| **Social links** | Links to your website, Discord, YouTube, Mastodon and others. |
+| **Latest discussions** | Your newest, most active or trending discussions, filled in when it sends. |
+| **Sign-off** | Who it is from. |
+
+Every email ends with the **unsubscribe footer**. It is shown locked at the
+bottom of the canvas and cannot be removed.
+
+Text in the builder is written as `**bold**`, `*italic*` and
+`[link text](https://…)`, with the buttons above the box doing it for you.
+Quick tags work in builder text, headings and links too.
+
+**Images** can be any `https://` address (Herald never fetches it), or uploaded.
+Uploads must be JPEG, PNG, GIF or WebP up to 8 MB. Herald checks the file
+itself rather than its name, re-saves it from its pixels at up to 1200px wide,
+and stores it under a random name in `public/assets/herald`. SVG is refused.
+
+### Latest discussions
+
+The Latest discussions block lists **newest**, **latest activity** or
+**trending this week** (the most replies in the last seven days), up to ten,
+as titles only or with an excerpt, from the tags you tick (and optionally their
+child tags) or from everywhere.
+
+- **It lists the forum as a guest sees it.** Discussions in tags guests cannot
+  see, hidden discussions and private discussions never appear, whoever writes
+  the mailing.
+- **The list is fixed when the send begins,** so everyone gets the same list
+  however long the send takes.
+- **Leave out discussions an earlier block lists** lets a second list (say,
+  *New discussions*) skip what the first already showed.
+- **An issue with nothing to list is skipped,** not sent. A weekly digest in a
+  quiet week stays out of everyone's inbox. Sent by hand, Herald tells you
+  instead.
+
+Editor mailings can list discussions too: put `{latest_discussions}` on a line
+of its own for the five most active, as guests see them.
+
+### What a designed email is made of
+
+The builder writes the HTML that email clients actually handle: layout tables, a
+600px column that shrinks on phones, inline styles, buttons that keep their
+colour where a client strips a link's background, images with a width and
+alt text, and colours set on both text and background so a client's dark mode
+never leaves dark text on a dark background. A plain-text part is always
+included.
+
+What the browser sends is never trusted: blocks are checked against a list of
+known block types and fields, text is escaped, numbers are clamped, colours must
+be colours, and links must be `http`, `https`, `mailto`, a path on your forum, or
+start with a link quick tag such as `{suite_url}`.
+
+## Scheduling and repeats
+
+![Scheduling: a date, a time, a time zone and an optional repeat](screenshots/schedule.png)
+
+In **Send…**, switch to **Schedule** and pick a date, a time and a time zone (your
+browser's, to start with). Any time from five minutes to a year ahead.
+
+- Until it goes you can **edit it**, or press **Unschedule** to make it a draft
+  again.
+- The Bulk mail list shows when each scheduled mailing goes next.
+- The audience is counted **when it goes**, not when you scheduled it.
+
+Choose **Repeat** daily, weekly or monthly to send it again and again:
+
+- **Each issue is a mailing of its own,** with its own delivery record. Open the
+  repeating mailing to see its **Issues**.
+- **The time stays the time.** 9:00 in New York is 9:00 in New York on both
+  sides of a clock change. A monthly mailing set for the 31st goes on the last
+  day of shorter months and comes back to the 31st.
+- **Edit the repeating mailing** to change every issue still to come.
+- If your server was down when an issue was due, one issue goes as soon as it
+  is back — not a backlog of them.
+
+Scheduled mailings start from Flarum's scheduler, so cron must run
+`php flarum schedule:run` every minute (see
+[How sending works](#how-sending-works)).
+
+## Templates
+
+The **Templates** tab holds mailings you start from rather than send. Herald
+creates two the first time you open it:
+
+- **Weekly digest** — a hero, *Trending this week*, *New discussions*, a button
+  and a sign-off. Made to repeat weekly.
+- **Announcement** — a hero, some text, a button and a sign-off.
+
+**Use template** makes a new draft from it. Any mailing, sent ones included,
+can be **saved as a template** or **copied**. Templates you no longer use can be
+**archived** (and restored).
+
+![The Templates tab](screenshots/templates.png)
+
+## The signup widget and guest subscribers
+
+Herald adds a **Newsletter signup** widget to **Bespoke** and to
+**FoF Forum Widgets**. Neither shows it until you place it in your widget
+layout. Its title, text and button wording can be changed in **Admin → Herald**.
+
+| Guest | Member | Dark mode |
+| --- | --- | --- |
+| ![The widget for a guest: an email field and Subscribe](screenshots/signup-guest.png) | ![The widget for a subscribed member](screenshots/signup-member.png) | ![The guest widget in dark mode](screenshots/signup-guest-dark.png) |
+
+**Members** see one button. It is the same switch as *News from the forum team*
+on their Settings page, so there is one answer per member, never a second list.
+
+**Guests** enter their email address, and Herald sends a confirmation link
+(double opt-in):
+
+- **Nothing is sent to an address until its owner clicks the link.** Opening the
+  link shows a Confirm button, so a mail scanner that opens every link cannot
+  confirm on their behalf. The link works once, for 48 hours.
+- **Addresses nobody confirms are forgotten after a week.**
+- **The form says the same thing for every address,** so it cannot be used to
+  find out who is subscribed or who has an account. If the address belongs to a
+  member, the member is emailed a note pointing to their settings page instead.
+- **It is rate-limited** (five tries an hour from one connection, three
+  confirmation emails a day to one address) and has a hidden field that catches
+  form-filling bots. No IP address is stored.
+- **Every newsletter a guest gets has its own one-click unsubscribe link and
+  headers.**
+
+To include guests in a mailing, switch on **Newsletter subscribers** on the
+Recipients tab. Only confirmed, still-subscribed guests are counted, and the
+count says how many. The member filters do not apply to guests. A guest who
+later registers with the same address gets one copy, as a member.
+
+The **Newsletter subscribers** tab on the Bulk mail list shows every guest,
+whether they have confirmed, and when they signed up. Search it, **export it as
+CSV**, or **remove** someone along with their delivery records.
+
+![The Newsletter subscribers tab](screenshots/subscribers.png)
+
+Guests are off in **Admin → Herald → Let guests subscribe** if you only want
+members on your list. The widget then shows to members only.
+
+## Delivery records
+
+Every mailing keeps a record of what happened to each copy. Open a sent mailing
+and choose **Deliveries**:
+
+![The Deliveries tab: every recipient and what happened to their copy](screenshots/deliveries.png)
+
+| Outcome | Meaning |
+| --- | --- |
+| **Sent** | Handed to your mail server. |
+| **Failed** | Your mail server refused it. Retried automatically after 5 minutes, then after 30. The reason is shown. |
+| **Skipped** | They opted out after you pressed Send, so it was not sent. Consent is checked again just before each copy goes. |
+| **Unknown** | The server stopped while handing it over, so it may have arrived. These are never resent automatically. |
+
+- **Nobody is sent the same mailing twice by accident.** Each copy's record is
+  written before the copy is handed over, and can be written only once.
+- **Resend to failed** appears once a mailing has finished and some copies
+  finally failed.
+- The Bulk mail list shows failed, skipped and unknown counts under each
+  mailing.
 
 ## Quick tags
 
@@ -176,7 +402,7 @@ is left exactly as written.
 
 ## Choosing recipients
 
-![The Recipients tab: group, join date, last visit, post and discussion filters, with a live count](screenshots/recipients.png)
+![The Recipients tab: newsletter subscribers, then group, join date, last visit, post and discussion filters, with a live count](screenshots/recipients.png)
 
 Every filter you set narrows the list further. Filters left empty do nothing.
 
@@ -273,8 +499,21 @@ php flarum herald:process
 already received it keep their copy, and the mailing is marked *Cancelled* with
 the count it reached.
 
-A failed email (a rejected address, a provider hiccup) is counted, logged with
-the reason, and skipped. It does not stop the rest of the send.
+A failed email (a rejected address, a provider hiccup) is recorded with the
+reason and retried later; it does not stop the rest of the send. See
+[Delivery records](#delivery-records).
+
+The scheduler also does three other jobs every minute: it starts mailings whose
+time has come, retries failed copies whose time has come, and picks up any send
+whose queue job was lost.
+
+### Sending limits
+
+If your mail provider limits how many emails you may send per minute, hour or
+day, enter those numbers in **Admin → Herald**. The limits are shared by every
+mailing, so two mailings sending at once still stay under them. A send that
+reaches a limit pauses, says so on its progress page, and carries on by itself
+when there is room again.
 
 ## Works with your editor
 
@@ -308,6 +547,9 @@ to Scribe or Rich Text.
 | **Emails per batch** | 50 | How many emails each batch sends. Lower it if your mail provider limits how fast you can send. |
 | **Seconds between batches** | 0 | A pause between batches, for providers with an hourly cap. For example, 50 per batch every 60 seconds is 3,000 an hour. |
 | **Reply-to address** | *(empty)* | Where replies to a mailing go. Empty uses your forum's normal sending address. |
+| **Most emails a minute / an hour / a day** | *(no limit)* | Your mail provider's sending limits, shared by every mailing. See [Sending limits](#sending-limits). |
+| **Let guests subscribe** | On | Whether the signup widget offers guests the email form. |
+| **Widget title / text / button text** | *(translated defaults)* | The signup widget's wording. |
 
 The sender name and address are your forum's own, set in **Admin → Email**.
 
@@ -478,6 +720,18 @@ settings are wrong. Send yourself a test from **Admin → Email**.
 Opted-out and unconfirmed members are never included, and suspended members are
 left out unless you include them. The count shows how many were left out for
 each reason.
+
+**A scheduled mailing did not go out.**
+Scheduled and repeating mailings are started by Flarum's scheduler. Check that
+cron runs `php flarum schedule:run` every minute.
+
+**A repeating digest skipped a week.**
+Its Latest discussions blocks had nothing to list, so the issue was skipped
+rather than sent empty. It shows as *Skipped* in the repeating mailing's Issues.
+
+**Guests say they never got the confirmation email.**
+It comes from your forum's normal sending address; ask them to check spam.
+Addresses that are never confirmed are never mailed and are removed after a week.
 
 **A tag came through as text, such as `{member_nmae}`.**
 It is misspelled, so Herald left it alone. Click tags in from the Quick Tags
