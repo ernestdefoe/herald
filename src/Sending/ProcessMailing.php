@@ -30,8 +30,8 @@ class ProcessMailing extends AbstractJob
 
         $result = $processor->batch($mailing);
 
-        if ($result['state'] === 'more' || $result['state'] === 'busy') {
-            $wait = $result['state'] === 'busy' ? max(5, $result['wait'] ?? 0) : ($result['wait'] ?? 0);
+        if (in_array($result['state'], ['more', 'busy', 'limited'], true)) {
+            $wait = $result['state'] === 'more' ? ($result['wait'] ?? 0) : max(5, $result['wait'] ?? 0);
 
             $wait > 0
                 ? $queue->later($wait, new self($this->mailingId))

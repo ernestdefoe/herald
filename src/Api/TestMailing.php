@@ -29,7 +29,7 @@ class TestMailing extends Controller
         $template = $this->renderer->template($mailing, $this->locale->for($actor));
         $values = $this->tags->values(collect([$actor]))[$actor->id] ?? [];
 
-        $this->sender->send($actor, $template, $values, $this->tags->urlTags());
+        $this->sender->send((string) $actor->email, (string) $actor->display_name, $template, $values, $this->tags->urlTags());
 
         return ['sent' => true, 'to' => $actor->email];
     }

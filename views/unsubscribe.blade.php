@@ -1,13 +1,15 @@
-@php
-    $t = fn ($key, $params = []) => $translator->trans('ernestdefoe-herald.unsubscribe.'.$key, $params);
-@endphp
+{{--
+  The small standalone pages behind Herald's email links: unsubscribe,
+  resubscribe and confirm a newsletter signup. No forum JavaScript, so they
+  work from any mail client and for anyone, signed in or not.
+--}}
 <!DOCTYPE html>
 <html lang="{{ $translator->getLocale() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>{{ $t('title') }} · {{ $forumTitle }}</title>
+    <title>{{ $heading }} · {{ $forumTitle }}</title>
     <style>
         :root { color-scheme: light dark; --bg: #f3f5f7; --card: #fff; --text: #222; --muted: #667; --line: #e1e4e8; --accent: {{ $accent }}; }
         @media (prefers-color-scheme: dark) { :root { --bg: #16181c; --card: #1f2227; --text: #e8e8e8; --muted: #9aa0a6; --line: #30343a; } }
@@ -25,26 +27,18 @@
 <body>
 <main>
     <div class="card">
-        @if ($state === 'invalid')
-            <h1>{{ $t('invalid_title') }}</h1>
-            <p>{{ $t('invalid_text') }}</p>
-            <p><a href="{{ $settingsUrl }}">{{ $t('manage') }}</a></p>
-        @elseif ($state === 'confirm')
-            <h1>{{ $t('confirm_title') }}</h1>
-            <p>{{ $t('confirm_text', ['forumTitle' => $forumTitle]) }}</p>
+        <h1>{{ $heading }}</h1>
+        <p>{{ $text }}</p>
+        @if ($button)
             <form method="post" action="{{ $action }}">
-                <button type="submit">{{ $t('confirm_button') }}</button>
+                @if ($formAction)
+                    <input type="hidden" name="action" value="{{ $formAction }}">
+                @endif
+                <button type="submit" @if ($secondary) class="secondary" @endif>{{ $button }}</button>
             </form>
-        @elseif ($state === 'unsubscribed')
-            <h1>{{ $t('done_title') }}</h1>
-            <p>{{ $t('done_text', ['forumTitle' => $forumTitle]) }}</p>
-            <form method="post" action="{{ $action }}">
-                <input type="hidden" name="action" value="resubscribe">
-                <button type="submit" class="secondary">{{ $t('resubscribe_button') }}</button>
-            </form>
-        @else
-            <h1>{{ $t('resubscribed_title') }}</h1>
-            <p>{{ $t('resubscribed_text', ['forumTitle' => $forumTitle]) }}</p>
+        @endif
+        @if ($link)
+            <p><a href="{{ $link }}">{{ $linkLabel }}</a></p>
         @endif
     </div>
     <p class="foot"><a href="{{ $forumUrl }}">{{ $forumTitle }}</a></p>

@@ -32,6 +32,20 @@ use TypeError;
  * @property int|null $sent_by
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
+ * @property string $type editor | builder
+ * @property array|null $blocks
+ * @property string|null $preheader
+ * @property array|null $frozen
+ * @property bool $is_template
+ * @property Carbon|null $archived_at
+ * @property Carbon|null $scheduled_at
+ * @property Carbon|null $schedule_anchor
+ * @property string|null $timezone
+ * @property string|null $repeat_every
+ * @property int|null $series_id
+ * @property int $skipped_count
+ * @property int $subscriber_cursor
+ * @property int $max_subscriber_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read User|null $creator
@@ -42,6 +56,15 @@ class Mailing extends AbstractModel
     public const SENDING = 'sending';
     public const SENT = 'sent';
     public const CANCELLED = 'cancelled';
+    public const SCHEDULED = 'scheduled';
+    /** A scheduled issue whose only dynamic content had nothing in it. */
+    public const SKIPPED = 'skipped';
+
+    public const EDITOR = 'editor';
+    public const BUILDER = 'builder';
+
+    /** What a copy carries over: the words, the design and the audience. */
+    public const CONTENT = ['subject', 'content', 'type', 'blocks', 'preheader', 'filters'];
 
     protected $table = 'herald_mailings';
 
@@ -58,6 +81,21 @@ class Mailing extends AbstractModel
         'last_batch_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'blocks' => 'array',
+        'frozen' => 'array',
+        'is_template' => 'boolean',
+        'archived_at' => 'datetime',
+        'scheduled_at' => 'datetime',
+        'schedule_anchor' => 'datetime',
+        'series_id' => 'integer',
+        'skipped_count' => 'integer',
+        'subscriber_cursor' => 'integer',
+        'max_subscriber_id' => 'integer',
+    ];
+
+    protected $attributes = [
+        'type' => self::EDITOR,
+        'is_template' => false,
     ];
 
     protected static Formatter $formatter;
@@ -127,5 +165,40 @@ class Mailing extends AbstractModel
     public function isSending(): bool
     {
         return $this->status === self::SENDING;
+    }
+
+    public function isBuilt(): bool
+    {
+        return $this->type === self::BUILDER;
+    }
+
+    /**
+     * Whether there is anything to send: blocks for a builder mailing, a
+     * message for an editor one.
+     */
+    public function hasBody(): bool
+    {
+        return $this->isBuilt() ? ! empty($this->blocks) : (bool) $this->content;
+    }
+
+    /**
+     * A new draft with this one's content and audience — for Copy, Save as
+     * template, starting from a template, and each issue of a series.
+     */
+    public function duplicate(array $overrides = []): self
+    {
+        $copy = new self();
+
+        foreach (self::CONTENT as $field) {
+            $copy->setAttribute($field, $this->getAttribute($field));
+        }
+
+        $copy->status = self::DRAFT;
+
+        foreach ($overrides as $key => $value) {
+            $copy->setAttribute($key, $value);
+        }
+
+        return $copy;
     }
 }

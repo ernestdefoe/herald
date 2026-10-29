@@ -2,7 +2,11 @@
 
 namespace ErnestDefoe\Herald\Tag;
 
+use ErnestDefoe\Herald\Subscriber;
+use ErnestDefoe\Herald\Unsubscribe\Token;
+use Flarum\User\User;
 use Illuminate\Contracts\Container\Container;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Illuminate\Support\Collection;
 
 class TagRegistry
@@ -84,6 +88,35 @@ class TagRegistry
                     $values[$userId][$alias] = $userValues[$canonical];
                 }
             }
+        }
+
+        return $values;
+    }
+
+    /**
+     * A guest subscriber's values. They are not a member, so the member tags
+     * are blank — except {member_name}, which reads "there" ("Hi there") —
+     * and the forum-wide tags are what every member gets.
+     *
+     * @return array<string, string>
+     */
+    public function guestValues(Subscriber $subscriber): array
+    {
+        $values = array_fill_keys(array_keys($this->all()), '');
+
+        foreach ($this->providers() as $provider) {
+            if ($provider instanceof SuiteTags) {
+                $values = array_merge($values, array_values($provider->values(collect([new User()])))[0] ?? []);
+            }
+        }
+
+        $unsubscribe = $this->container->make(Token::class)->subscriberUrl($subscriber);
+        $values['member_name'] = $this->container->make(TranslatorInterface::class)->trans('ernestdefoe-herald.email.guest_name');
+        $values['unsubscribe_url'] = $unsubscribe;
+        $values['settings_url'] = $unsubscribe;
+
+        foreach (self::ALIASES as $alias => $canonical) {
+            $values[$alias] = $values[$canonical] ?? '';
         }
 
         return $values;

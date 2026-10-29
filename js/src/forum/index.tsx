@@ -6,12 +6,16 @@ import FieldSet from 'flarum/common/components/FieldSet';
 import Switch from 'flarum/common/components/Switch';
 import ItemList from 'flarum/common/utils/ItemList';
 import { t } from './util';
+import registerWidgets from './widgets';
 
 export { default as extend } from './extend';
 export { default as RecipientFilters } from './components/RecipientFilters';
 export { default as QuickTags } from './components/QuickTags';
+export { default as SignupWidget } from './components/SignupWidget';
 
 app.initializers.add('ernestdefoe/herald', () => {
+  registerWidgets();
+
   extend(SessionDropdown.prototype, 'items', function (items: ItemList<any>) {
     if (!app.forum.attribute('canSendHeraldMail')) return;
 

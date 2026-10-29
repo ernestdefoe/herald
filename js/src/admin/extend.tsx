@@ -57,6 +57,57 @@ export default [
       type: 'email',
       placeholder: 'news@example.com',
     }))
+    .setting(() => ({
+      setting: key('limit_minute'),
+      label: t('limit_minute_label'),
+      help: t('limit_help'),
+      type: 'number',
+      min: 0,
+    }))
+    .setting(() => ({
+      setting: key('limit_hour'),
+      label: t('limit_hour_label'),
+      type: 'number',
+      min: 0,
+    }))
+    .setting(() => ({
+      setting: key('limit_day'),
+      label: t('limit_day_label'),
+      type: 'number',
+      min: 0,
+    }))
+    .customSetting(function () {
+      return (
+        <div className="Form-group HeraldAdmin-heading">
+          <h3>{t('signup_heading')}</h3>
+          <div className="helpText">{t('signup_help')}</div>
+        </div>
+      );
+    })
+    .setting(() => ({
+      setting: key('guest_signup'),
+      label: t('guest_signup_label'),
+      help: t('guest_signup_help'),
+      type: 'boolean',
+    }))
+    .setting(() => ({
+      setting: key('widget_title'),
+      label: t('widget_title_label'),
+      type: 'text',
+      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.title', {}, true),
+    }))
+    .setting(() => ({
+      setting: key('widget_text'),
+      label: t('widget_text_label'),
+      type: 'text',
+      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.text', {}, true),
+    }))
+    .setting(() => ({
+      setting: key('widget_button'),
+      label: t('widget_button_label'),
+      type: 'text',
+      placeholder: app.translator.trans('ernestdefoe-herald.forum.signup.button', {}, true),
+    }))
     .customSetting(function () {
       return (
         <div className="Form-group">

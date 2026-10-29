@@ -10,9 +10,16 @@ import RecipientFilters from './RecipientFilters';
 import PreviewModal from './PreviewModal';
 import SendModal from './SendModal';
 import StatusBadge from './StatusBadge';
-import { api, Counts, Mailing, percent, t } from '../util';
+import DeliveriesTable from './DeliveriesTable';
+import Switch from 'flarum/common/components/Switch';
+import type { BuilderMeta } from '../builder/Inspector';
+import { api, Block, Counts, Mailing, percent, t } from '../util';
+import { when } from '../when';
 
-type Meta = { tags: QuickTag[]; aliases: Record<string, string>; background: boolean };
+type Meta = BuilderMeta & { tags: QuickTag[]; aliases: Record<string, string>; background: boolean };
+
+/** The builder, fetched the first time anybody needs it. */
+let BuilderComponent: any = null;
 
 /**
  * Compose, target, preview, send — Invision's bulk mail form on one page.
@@ -29,10 +36,15 @@ export default class HeraldEditPage extends Page {
   loading = true;
 
   subject = '';
+  preheader = '';
   content = '';
+  type: 'editor' | 'builder' = 'editor';
+  blocks: Block[] = [];
   filters: Record<string, any> = {};
+  autosaveTimer?: number;
+  issues: Mailing[] | null = null;
 
-  tab: 'content' | 'recipients' = 'content';
+  tab: 'content' | 'recipients' | 'deliveries' | 'issues' = 'content';
   dirty = false;
   saving = false;
   testing = false;
@@ -42,6 +54,7 @@ export default class HeraldEditPage extends Page {
 
   background = false;
   driving = false;
+  limited = false;
   removed = false;
 
   lastFocus: 'subject' | 'content' = 'content';
@@ -74,13 +87,20 @@ export default class HeraldEditPage extends Page {
         api<{ data: Mailing }>('GET', `/mailings/${this.id}`).then(({ data }) => {
           this.mailing = data;
           this.subject = data.subject;
+          this.preheader = data.preheader || '';
           this.content = data.content || '';
+          this.type = data.type || 'editor';
+          this.blocks = data.blocks || [];
           this.filters = Array.isArray(data.filters) ? {} : { ...(data.filters || {}) };
+          if (data.repeat) this.loadIssues();
         })
       );
+    } else if (m.route.param('builder')) {
+      this.type = 'builder';
     }
 
     Promise.all(loads).then(() => {
+      if (this.type === 'builder') this.loadBuilder();
       this.loading = false;
       this.background = !!this.meta?.background;
       this.count();
@@ -111,6 +131,7 @@ export default class HeraldEditPage extends Page {
     super.onremove(vnode);
     this.removed = true;
     clearTimeout(this.countTimer);
+    clearTimeout(this.autosaveTimer);
     window.removeEventListener('beforeunload', this.unloadGuard);
   }
 
@@ -147,6 +168,7 @@ export default class HeraldEditPage extends Page {
             <div className="HeraldPage-titleRow">
               <h2 className="HeraldPage-title">{this.id ? this.subject || t('edit.untitled') : t('edit.new_title')}</h2>
               {this.mailing ? <StatusBadge mailing={this.mailing} /> : null}
+              {this.mailing?.isTemplate ? <span className="HeraldStatus HeraldStatus--template">{t('status.template')}</span> : null}
             </div>
           </div>
           {this.mailing?.status === 'sending' ? null : this.actions()}
@@ -164,66 +186,145 @@ export default class HeraldEditPage extends Page {
 
         <nav className="HeraldTabs" role="tablist">
           {this.tabButton('content', 'fas fa-pen', t('edit.tab_content'))}
-          {this.tabButton('recipients', 'fas fa-users', [
-            t('edit.tab_recipients'),
-            this.counts ? <span className="HeraldTabs-count">{this.counts.reach.toLocaleString(app.data.locale)}</span> : null,
-          ])}
+          {this.mailing?.isTemplate
+            ? null
+            : this.tabButton('recipients', 'fas fa-users', [
+                t('edit.tab_recipients'),
+                this.counts ? <span className="HeraldTabs-count">{this.counts.reach.toLocaleString(app.data.locale)}</span> : null,
+              ])}
+          {this.hasDeliveries() ? this.tabButton('deliveries', 'fas fa-inbox', t('edit.tab_deliveries')) : null}
+          {this.mailing?.repeat ? this.tabButton('issues', 'far fa-calendar-alt', t('edit.tab_issues')) : null}
         </nav>
 
         <div className="HeraldEditPage-tab" hidden={this.tab !== 'content'}>
-          <div className="HeraldEditor">
-            <div className="HeraldEditor-main">
-              <div className="Form-group">
-                <label for="herald-subject">{t('edit.subject')}</label>
-                <input
-                  id="herald-subject"
-                  className="FormControl"
-                  maxlength={255}
-                  value={this.subject}
-                  placeholder={extractText(t('edit.subject_placeholder'))}
-                  oncreate={(v: any) => (this.subjectEl = v.dom)}
-                  onfocus={() => (this.lastFocus = 'subject')}
-                  oninput={(e: Event) => {
-                    this.subject = (e.target as HTMLInputElement).value;
-                    this.dirty = true;
-                  }}
-                />
-              </div>
-              <div className="Form-group">
-                <label>{t('edit.content')}</label>
-                <div className="HeraldEditor-editor" onfocusin={() => (this.lastFocus = 'content')}>
-                  <HeraldTextEditor
-                    composer={this.composer}
-                    value={this.content}
-                    placeholder={extractText(t('edit.content_placeholder'))}
-                    submitLabel={t('edit.save')}
-                    onchange={(value: string) => {
-                      this.content = value;
-                      this.dirty = true;
-                    }}
-                    onsubmit={() => this.save()}
-                  />
-                </div>
-              </div>
-            </div>
-            <aside className="HeraldEditor-side">
-              <QuickTags tags={this.meta?.tags || []} aliases={this.meta?.aliases || {}} oninsert={(text: string) => this.insert(text)} />
-            </aside>
-          </div>
+          {this.type === 'builder' ? this.builderView() : this.editorView()}
         </div>
 
         <div className="HeraldEditPage-tab" hidden={this.tab !== 'recipients'}>
           <div className="HeraldRecipients">
-            <RecipientFilters
-              filters={this.filters}
-              onchange={() => {
-                this.dirty = true;
-                this.queueCount();
-              }}
-            />
+            <div>
+              {this.guestsFilter()}
+              <RecipientFilters
+                filters={this.filters}
+                onchange={() => {
+                  this.dirty = true;
+                  this.queueCount();
+                }}
+              />
+            </div>
             <aside className="HeraldRecipients-count">{this.countCard()}</aside>
           </div>
         </div>
+
+        {this.tab === 'deliveries' && this.mailing ? (
+          <div className="HeraldEditPage-tab">
+            <DeliveriesTable mailing={this.mailing} onresend={(response: any) => this.afterSend(response)} />
+          </div>
+        ) : null}
+
+        {this.tab === 'issues' ? <div className="HeraldEditPage-tab">{this.issuesView()}</div> : null}
+      </div>
+    );
+  }
+
+  /** Subject and preview line: the same for both ways of writing. */
+  headerFields() {
+    return [
+      <div className="Form-group">
+        <label for="herald-subject">{t('edit.subject')}</label>
+        <input
+          id="herald-subject"
+          className="FormControl"
+          maxlength={255}
+          value={this.subject}
+          placeholder={extractText(t('edit.subject_placeholder'))}
+          oncreate={(v: any) => (this.subjectEl = v.dom)}
+          onfocus={() => (this.lastFocus = 'subject')}
+          oninput={(e: Event) => {
+            this.subject = (e.target as HTMLInputElement).value;
+            this.touched();
+          }}
+        />
+      </div>,
+      <div className="Form-group">
+        <label for="herald-preheader">{t('edit.preheader')}</label>
+        <input
+          id="herald-preheader"
+          className="FormControl"
+          maxlength={255}
+          value={this.preheader}
+          placeholder={extractText(t('edit.preheader_placeholder'))}
+          oninput={(e: Event) => {
+            this.preheader = (e.target as HTMLInputElement).value;
+            this.touched();
+          }}
+        />
+        <p className="helpText">{t('edit.preheader_help')}</p>
+      </div>,
+    ];
+  }
+
+  builderView() {
+    return (
+      <div className="HeraldBuilderPage">
+        <div className="HeraldBuilderPage-fields">{this.headerFields()}</div>
+        {BuilderComponent ? (
+          <BuilderComponent
+            blocks={this.blocks}
+            meta={this.meta}
+            subject={() => this.subject}
+            preheader={() => this.preheader}
+            onchange={(blocks: Block[]) => {
+              this.blocks = blocks;
+              this.touched();
+            }}
+          />
+        ) : (
+          <LoadingIndicator />
+        )}
+        <p className="HeraldBuilderPage-switch">
+          <Button className="Button Button--link" icon="fas fa-pen" onclick={() => this.useEditor()}>
+            {t('edit.use_editor')}
+          </Button>
+        </p>
+      </div>
+    );
+  }
+
+  editorView() {
+    return (
+      <div className="HeraldEditor">
+        <div className="HeraldEditor-main">
+          <div className="HeraldDesignCallout">
+            <div>
+              <strong>{t('edit.design_title')}</strong>
+              <p className="helpText">{t('edit.design_text')}</p>
+            </div>
+            <Button className="Button" icon="fas fa-th-large" onclick={() => this.useBuilder()}>
+              {t('edit.design_button')}
+            </Button>
+          </div>
+          {this.headerFields()}
+          <div className="Form-group">
+            <label>{t('edit.content')}</label>
+            <div className="HeraldEditor-editor" onfocusin={() => (this.lastFocus = 'content')}>
+              <HeraldTextEditor
+                composer={this.composer}
+                value={this.content}
+                placeholder={extractText(t('edit.content_placeholder'))}
+                submitLabel={t('edit.save')}
+                onchange={(value: string) => {
+                  this.content = value;
+                  this.touched();
+                }}
+                onsubmit={() => this.save()}
+              />
+            </div>
+          </div>
+        </div>
+        <aside className="HeraldEditor-side">
+          <QuickTags tags={this.meta?.tags || []} aliases={this.meta?.aliases || {}} oninsert={(text: string) => this.insert(text)} />
+        </aside>
       </div>
     );
   }
@@ -254,14 +355,20 @@ export default class HeraldEditPage extends Page {
         <Button className="Button HeraldActions-test" icon="fas fa-vial" loading={this.testing} onclick={() => this.test()}>
           {t('edit.test')}
         </Button>
-        <Button className="Button Button--primary" icon="fas fa-paper-plane" onclick={() => this.openSend()}>
-          {this.mailing && this.mailing.status !== 'draft' ? t('edit.resend') : t('edit.send')}
-        </Button>
+        {this.mailing?.isTemplate ? (
+          <Button className="Button Button--primary" icon="fas fa-file-import" onclick={() => this.useTemplate()}>
+            {t('edit.use_template')}
+          </Button>
+        ) : (
+          <Button className="Button Button--primary" icon="fas fa-paper-plane" onclick={() => this.openSend()}>
+            {this.mailing && !['draft', 'scheduled'].includes(this.mailing.status) ? t('edit.resend') : t('edit.send')}
+          </Button>
+        )}
       </div>
     );
   }
 
-  tabButton(key: 'content' | 'recipients', icon: string, label: any) {
+  tabButton(key: 'content' | 'recipients' | 'deliveries' | 'issues', icon: string, label: any) {
     return (
       <button
         type="button"
@@ -279,6 +386,24 @@ export default class HeraldEditPage extends Page {
   summary() {
     const mailing = this.mailing!;
 
+    if (mailing.status === 'scheduled' && mailing.scheduledAt) {
+      return (
+        <div className="HeraldSummary HeraldSummary--scheduled">
+          <span>
+            {mailing.repeat
+              ? t('edit.summary_repeating', {
+                  every: extractText(t(`schedule.every_${mailing.repeat}`)),
+                  when: when(mailing.scheduledAt, mailing.timezone),
+                })
+              : t('edit.summary_scheduled', { when: when(mailing.scheduledAt, mailing.timezone) })}
+          </span>
+          <Button className="Button Button--link" icon="far fa-calendar-times" onclick={() => this.unschedule()}>
+            {t('edit.unschedule')}
+          </Button>
+        </div>
+      );
+    }
+
     return (
       <div className={`HeraldSummary HeraldSummary--${mailing.status}`}>
         {t(`edit.summary_${mailing.status}`, {
@@ -287,6 +412,68 @@ export default class HeraldEditPage extends Page {
           failed: mailing.failedCount.toLocaleString(app.data.locale),
         })}
       </div>
+    );
+  }
+
+  guestsFilter() {
+    const pool = this.counts?.guestPool ?? 0;
+
+    return (
+      <fieldset className="HeraldFilter HeraldFilter--guests">
+        <legend>{t('filters.guests')}</legend>
+        <Switch
+          state={!!this.filters.guests}
+          onchange={(value: boolean) => {
+            this.filters.guests = value;
+            this.dirty = true;
+            this.queueCount();
+          }}
+        >
+          {t('filters.guests_include', { count: pool, formatted: pool.toLocaleString(app.data.locale) })}
+        </Switch>
+        <p className="helpText">{t('filters.guests_help')}</p>
+      </fieldset>
+    );
+  }
+
+  hasDeliveries(): boolean {
+    return !!this.mailing && !this.mailing.isTemplate && !['draft', 'scheduled'].includes(this.mailing.status) && !this.mailing.repeat;
+  }
+
+  issuesView() {
+    if (!this.issues) return <LoadingIndicator />;
+    if (!this.issues.length) return <p className="HeraldEmpty">{t('edit.issues_empty')}</p>;
+
+    return (
+      <table className="HeraldTable">
+        <thead>
+          <tr>
+            <th>{t('list.subject')}</th>
+            <th>{t('list.status')}</th>
+            <th className="HeraldTable-num">{t('list.sent')}</th>
+            <th>{t('list.date')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {this.issues.map((issue) => (
+            <tr key={issue.id}>
+              <td className="HeraldTable-subject">
+                <a
+                  href={app.route('herald.edit', { id: issue.id })}
+                  onclick={(e: MouseEvent) => (e.preventDefault(), m.route.set(app.route('herald.edit', { id: issue.id })))}
+                >
+                  {issue.subject}
+                </a>
+              </td>
+              <td>
+                <StatusBadge mailing={issue} />
+              </td>
+              <td className="HeraldTable-num">{`${issue.sentCount.toLocaleString(app.data.locale)} / ${issue.recipientTotal.toLocaleString(app.data.locale)}`}</td>
+              <td className="HeraldTable-date">{issue.startedAt ? when(issue.startedAt) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     );
   }
 
@@ -307,6 +494,9 @@ export default class HeraldEditPage extends Page {
             })}
           </p>
         ) : null}
+        {counts.guests ? (
+          <p className="helpText">{t('edit.count_guests', { count: counts.guests, formatted: counts.guests.toLocaleString(app.data.locale) })}</p>
+        ) : null}
         <p className="helpText">{t('edit.consent_note')}</p>
       </div>
     );
@@ -314,7 +504,7 @@ export default class HeraldEditPage extends Page {
 
   progressView() {
     const mailing = this.mailing!;
-    const done = mailing.sentCount + mailing.failedCount;
+    const done = mailing.sentCount + mailing.failedCount + (mailing.skippedCount || 0);
     const pct = percent(done, mailing.recipientTotal);
 
     return (
@@ -329,6 +519,7 @@ export default class HeraldEditPage extends Page {
         <div className="HeraldProgress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
           <div className="HeraldProgress-fill" style={{ width: pct + '%' }} />
         </div>
+        {this.limited ? <p className="HeraldProgress-limited">{t('progress.limited')}</p> : null}
         <p className="helpText">{this.background ? t('progress.background') : t('progress.keep_open')}</p>
         <Button className="Button" icon="fas fa-ban" onclick={() => this.cancel()}>
           {t('progress.cancel')}
@@ -370,7 +561,84 @@ export default class HeraldEditPage extends Page {
   }
 
   payload() {
-    return { subject: this.subject, content: this.content, filters: this.filters };
+    const base = { subject: this.subject, preheader: this.preheader, type: this.type, filters: this.filters };
+
+    return this.type === 'builder' ? { ...base, blocks: this.blocks } : { ...base, content: this.content };
+  }
+
+  /**
+   * Something changed. A builder mailing saves itself a moment later, the
+   * way a design tool does; an editor one waits for Save, as it always has.
+   */
+  touched() {
+    this.dirty = true;
+
+    if (this.type !== 'builder' || this.mailing?.status === 'sending') return;
+
+    clearTimeout(this.autosaveTimer);
+    this.autosaveTimer = window.setTimeout(() => {
+      if (this.dirty && !this.saving && !this.removed) this.save();
+    }, 2000);
+  }
+
+  loadBuilder() {
+    if (BuilderComponent) return;
+
+    import('../builder/Builder').then((mod) => {
+      BuilderComponent = mod.default;
+      m.redraw();
+    });
+  }
+
+  /**
+   * To the builder. Whatever was written moves into a Text block — the
+   * builder's markup is the same **bold**, *italic*, [link](url) as Markdown.
+   */
+  useBuilder() {
+    this.type = 'builder';
+
+    if (!this.blocks.length && this.content.trim()) {
+      this.blocks = [
+        {
+          id: 'b' + Date.now().toString(36),
+          type: 'text',
+          data: { text: this.content, align: 'left' },
+          style: { padding: 16, background: '', hideOnMobile: false },
+        },
+      ];
+    }
+
+    this.loadBuilder();
+    this.touched();
+  }
+
+  useEditor() {
+    if (this.blocks.length && !confirm(extractText(t('edit.use_editor_confirm')))) return;
+
+    clearTimeout(this.autosaveTimer);
+    this.type = 'editor';
+    this.blocks = [];
+    this.dirty = true;
+  }
+
+  loadIssues() {
+    api<{ data: Mailing[] }>('GET', `/mailings?series=${this.id}`).then(({ data }) => {
+      this.issues = data;
+      m.redraw();
+    });
+  }
+
+  unschedule() {
+    api<{ data: Mailing }>('DELETE', `/mailings/${this.id}/schedule`).then(({ data }) => {
+      this.mailing = data;
+      m.redraw();
+    });
+  }
+
+  useTemplate() {
+    api<{ data: Mailing }>('POST', `/mailings/${this.id}/copy`, { as: 'use' }).then(({ data }) =>
+      m.route.set(app.route('herald.edit', { id: data.id }))
+    );
   }
 
   save(): Promise<void> {
@@ -400,7 +668,7 @@ export default class HeraldEditPage extends Page {
   preview() {
     // Unchanged since it was saved: preview what is stored, which is what
     // would be sent. Otherwise preview the words on screen.
-    app.modal.show(PreviewModal, this.id && !this.dirty ? { id: this.id } : { subject: this.subject, content: this.content });
+    app.modal.show(PreviewModal, this.id && !this.dirty ? { id: this.id } : { body: this.payload() });
   }
 
   /**
@@ -414,7 +682,7 @@ export default class HeraldEditPage extends Page {
       return false;
     }
 
-    if (!this.content.trim()) {
+    if (this.type === 'builder' ? !this.blocks.length : !this.content.trim()) {
       this.tab = 'content';
       app.alerts.show({ type: 'error' }, t('errors.content_required'));
       return false;
@@ -445,15 +713,29 @@ export default class HeraldEditPage extends Page {
         mailingId: this.id,
         subject: this.subject,
         filters: this.filters,
-        resend: !!this.mailing && this.mailing.status !== 'draft',
-        onsend: (response: any) => {
-          this.mailing = response.data;
-          this.background = !!response.background;
+        resend: !!this.mailing && !['draft', 'scheduled'].includes(this.mailing.status),
+        mailing: this.mailing,
+        onsend: (response: any) => this.afterSend(response),
+        onschedule: (data: Mailing) => {
+          this.mailing = data;
           m.redraw();
-          this.drive();
         },
       })
     );
+  }
+
+  afterSend(response: any) {
+    // Send now on a repeating mailing sends an issue: follow it there.
+    if (response.data.id !== this.id) {
+      m.route.set(app.route('herald.edit', { id: response.data.id }));
+      return;
+    }
+
+    this.mailing = response.data;
+    this.background = !!response.background;
+    this.tab = 'content';
+    m.redraw();
+    this.drive();
   }
 
   /**
@@ -475,9 +757,10 @@ export default class HeraldEditPage extends Page {
       api(`POST`, `/mailings/${this.mailing.id}/process`)
         .then((result: any) => {
           this.mailing = result.data;
+          this.limited = result.state === 'limited';
           m.redraw();
 
-          const wait = result.state === 'busy' ? Math.max(2, result.wait || 0) : result.wait || 0;
+          const wait = result.state === 'busy' || this.limited ? Math.max(2, result.wait || 0) : result.wait || 0;
           window.setTimeout(step, wait * 1000);
         })
         .catch(() => window.setTimeout(step, 5000));

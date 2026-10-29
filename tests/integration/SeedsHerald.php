@@ -38,11 +38,15 @@ trait SeedsHerald
     {
         $options = $json === null ? [] : ['json' => $json];
 
+        // The test request does not parse a query string itself.
+        parse_str((string) parse_url($path, PHP_URL_QUERY), $query);
+        $path = (string) parse_url($path, PHP_URL_PATH);
+
         if ($actor) {
-            return $this->send($this->request($method, $path, $options + ['authenticatedAs' => $actor]));
+            return $this->send($this->request($method, $path, $options + ['authenticatedAs' => $actor])->withQueryParams($query));
         }
 
-        $request = $this->request($method, $path, $options);
+        $request = $this->request($method, $path, $options)->withQueryParams($query);
 
         return $this->send($method === 'GET' ? $request : $this->requestWithCsrfToken($request));
     }

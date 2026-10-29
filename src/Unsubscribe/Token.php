@@ -2,6 +2,7 @@
 
 namespace ErnestDefoe\Herald\Unsubscribe;
 
+use ErnestDefoe\Herald\Subscriber;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
@@ -38,6 +39,28 @@ class Token
         return $this->url->to('forum')->route('herald.unsubscribe', [
             'user' => $user->id,
             'token' => $this->make($user),
+        ]);
+    }
+
+    /**
+     * A guest subscriber's link. Its own prefix, so a member's token can
+     * never pass as a subscriber's with the same id, or the other way round.
+     */
+    public function makeForSubscriber(Subscriber $subscriber): string
+    {
+        return substr(hash_hmac('sha256', 's|'.$subscriber->id.'|'.mb_strtolower($subscriber->email), $this->secret()), 0, 40);
+    }
+
+    public function verifySubscriber(Subscriber $subscriber, string $token): bool
+    {
+        return hash_equals($this->makeForSubscriber($subscriber), $token);
+    }
+
+    public function subscriberUrl(Subscriber $subscriber): string
+    {
+        return $this->url->to('forum')->route('herald.unsubscribe.guest', [
+            'subscriber' => $subscriber->id,
+            'token' => $this->makeForSubscriber($subscriber),
         ]);
     }
 

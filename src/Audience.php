@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\Builder;
  * Three conditions are not filters, because an admin must not be able to
  * switch them off: a confirmed address, a member who has not opted out, and
  * nothing beyond the highest id at the moment Send was pressed.
+ *
+ * Guest newsletter subscribers are a separate list the admin opts the
+ * mailing into ("guests" in its filters). The member filters do not apply to
+ * them: they have no groups, posts or visits.
  */
 class Audience
 {
@@ -48,13 +52,29 @@ class Audience
             ->where('users.herald_subscribed', true);
     }
 
+    public function includesGuests(array $filters): bool
+    {
+        return ! empty($filters['guests']);
+    }
+
     /**
-     * @return array{reach: int, optedOut: int, unconfirmed: int}
+     * @return Builder<Subscriber>
+     */
+    public function guests(): Builder
+    {
+        return Subscriber::query()->active();
+    }
+
+    /**
+     * @return array{reach: int, optedOut: int, unconfirmed: int, guests: int, guestPool: int}
      */
     public function count(array $filters): array
     {
+        $pool = $this->guests()->count();
+        $guests = $this->includesGuests($filters) ? $pool : 0;
+
         return [
-            'reach' => $this->recipients($filters)->count(),
+            'reach' => $this->recipients($filters)->count() + $guests,
             'optedOut' => $this->matching($filters)
                 ->where('users.is_email_confirmed', true)
                 ->where('users.herald_subscribed', false)
@@ -62,6 +82,8 @@ class Audience
             'unconfirmed' => $this->matching($filters)
                 ->where('users.is_email_confirmed', false)
                 ->count(),
+            'guests' => $guests,
+            'guestPool' => $pool,
         ];
     }
 }

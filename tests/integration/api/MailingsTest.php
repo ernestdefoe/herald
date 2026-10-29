@@ -76,7 +76,7 @@ class MailingsTest extends TestCase
     {
         $body = $this->body($this->call('POST', '/api/herald/count', 1, ['filters' => []]));
 
-        $this->assertSame(['reach' => 3, 'optedOut' => 1, 'unconfirmed' => 1], $body);
+        $this->assertSame(['reach' => 3, 'optedOut' => 1, 'unconfirmed' => 1, 'guests' => 0, 'guestPool' => 0], $body);
     }
 
     #[Test]
@@ -137,5 +137,48 @@ class MailingsTest extends TestCase
         $data = $this->body($response)['data'];
         $this->assertSame('Season opener', $data['subject']);
         $this->assertSame('draft', $data['status']);
+    }
+
+    #[Test]
+    public function two_starter_templates_are_installed_once()
+    {
+        $templates = $this->body($this->call('GET', '/api/herald/mailings?view=templates', 1))['data'];
+        $this->assertCount(2, $templates);
+        $this->assertSame(['builder', 'builder'], array_column($templates, 'type'));
+
+        $this->call('DELETE', '/api/herald/mailings/'.$templates[0]['id'], 1);
+        $this->assertCount(1, $this->body($this->call('GET', '/api/herald/mailings?view=templates', 1))['data'], 'A deleted starter stays deleted');
+
+        $this->assertSame([1], array_column($this->body($this->call('GET', '/api/herald/mailings', 1))['data'], 'id'), 'Templates are not mailings');
+    }
+
+    #[Test]
+    public function any_mailing_saves_as_a_template_and_a_template_starts_a_mailing()
+    {
+        $template = $this->body($this->call('POST', '/api/herald/mailings/1/copy', 1, ['as' => 'template']))['data'];
+        $this->assertTrue($template['isTemplate']);
+        $this->assertSame('Hello {member_name}', $template['subject']);
+
+        $this->assertSame(422, $this->call('POST', "/api/herald/mailings/{$template['id']}/send", 1, [])->getStatusCode(), 'A template is never sent itself');
+
+        $mailing = $this->body($this->call('POST', "/api/herald/mailings/{$template['id']}/copy", 1, ['as' => 'use']))['data'];
+        $this->assertFalse($mailing['isTemplate']);
+        $this->assertSame('draft', $mailing['status']);
+        $this->assertStringContainsString('News for the forum', $mailing['content']);
+
+        $this->call('PATCH', "/api/herald/mailings/{$template['id']}", 1, ['archived' => true]);
+        $archived = $this->body($this->call('GET', '/api/herald/mailings?view=archived', 1))['data'];
+        $this->assertContains($template['id'], array_column($archived, 'id'));
+    }
+
+    #[Test]
+    public function a_sent_mailing_can_be_duplicated()
+    {
+        $this->database()->table('herald_mailings')->where('id', 1)->update(['status' => 'sent']);
+
+        $copy = $this->body($this->call('POST', '/api/herald/mailings/1/copy', 1, []))['data'];
+
+        $this->assertSame('draft', $copy['status']);
+        $this->assertNotSame(1, $copy['id']);
     }
 }

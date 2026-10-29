@@ -8,8 +8,12 @@ export default class StatusBadge extends Component<{ mailing: Mailing }> {
     const status = mailing.status === 'sent' && mailing.sentCount === 0 && mailing.failedCount > 0 ? 'failed' : mailing.status;
     const label =
       mailing.status === 'sending'
-        ? t('status.sending_percent', { percent: percent(mailing.sentCount + mailing.failedCount, mailing.recipientTotal) })
-        : t(`status.${status}`);
+        ? t('status.sending_percent', {
+            percent: percent(mailing.sentCount + mailing.failedCount + (mailing.skippedCount || 0), mailing.recipientTotal),
+          })
+        : mailing.status === 'scheduled' && mailing.repeat
+          ? t('status.repeating')
+          : t(`status.${status}`);
 
     return <span className={`HeraldStatus HeraldStatus--${status}`}>{label}</span>;
   }

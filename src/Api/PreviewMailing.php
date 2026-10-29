@@ -13,8 +13,9 @@ use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * The email exactly as it would arrive, filled in with the ADMIN's own
- * details — what Invision's preview does. Works on unsaved content, so the
- * editor can preview before anything is saved.
+ * details — what Invision's preview does — or a chosen member's. Works on
+ * unsaved content, so the editor and the builder preview before anything is
+ * saved; the builder's live preview is this, on every change.
  */
 class PreviewMailing extends Controller
 {
@@ -30,7 +31,7 @@ class PreviewMailing extends Controller
     {
         $body = $this->body($request);
 
-        if (isset($body['id']) && ! array_key_exists('content', $body)) {
+        if (isset($body['id']) && ! array_key_exists('content', $body) && ! array_key_exists('blocks', $body)) {
             // A saved mailing previews from what is STORED, exactly as it
             // would be sent. Re-parsing its source would run it through
             // whichever editor the forum uses today — a mailing written in
@@ -42,15 +43,23 @@ class PreviewMailing extends Controller
             $mailing->id = 0;
             $mailing->updated_at = Carbon::now();
             $mailing->subject = trim((string) ($body['subject'] ?? ''));
-            $mailing->setSource((string) ($body['content'] ?? ''), $actor);
+            $this->fill($mailing, array_intersect_key($body, array_flip(['type', 'blocks', 'preheader'])), $actor);
+
+            if (! $mailing->isBuilt()) {
+                $mailing->setSource((string) ($body['content'] ?? ''), $actor);
+            }
         }
 
-        $template = $this->renderer->template($mailing, $this->locale->for($actor));
-        $values = $this->tags->values(collect([$actor]))[$actor->id] ?? [];
+        $as = isset($body['userId']) ? User::query()->find((int) $body['userId']) : null;
+        $as ??= $actor;
+
+        $template = $this->renderer->template($mailing, $this->locale->for($as), false, true);
+        $values = $this->tags->values(collect([$as]))[$as->id] ?? [];
 
         return [
             'subject' => $this->personaliser->text($template->subject, $values),
             'html' => $this->personaliser->html($template->html, $values, $this->tags->urlTags()),
+            'text' => $this->personaliser->text($template->text, $values, $this->tags->urlTags()),
         ];
     }
 }

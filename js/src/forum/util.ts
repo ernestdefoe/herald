@@ -18,10 +18,23 @@ export function percent(sent: number, total: number): number {
   return Math.min(100, Math.floor((sent / total) * 100));
 }
 
+export type Block = { id: string; type: string; data: Record<string, any>; style: { padding: number; background: string; hideOnMobile: boolean } };
+
 export type Mailing = {
   id: number;
   subject: string;
-  status: 'draft' | 'sending' | 'sent' | 'cancelled';
+  status: 'draft' | 'sending' | 'sent' | 'cancelled' | 'scheduled' | 'skipped';
+  type: 'editor' | 'builder';
+  preheader: string;
+  isTemplate: boolean;
+  archivedAt: string | null;
+  scheduledAt: string | null;
+  timezone: string | null;
+  repeat: 'daily' | 'weekly' | 'monthly' | null;
+  seriesId: number | null;
+  skippedCount: number;
+  outcomes?: Record<string, number>;
+  blocks?: Block[];
   filters: Record<string, any>;
   recipientTotal: number;
   sentCount: number;
@@ -34,4 +47,4 @@ export type Mailing = {
   content?: string;
 };
 
-export type Counts = { reach: number; optedOut: number; unconfirmed: number };
+export type Counts = { reach: number; optedOut: number; unconfirmed: number; guests: number; guestPool: number };
