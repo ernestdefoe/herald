@@ -56,7 +56,9 @@ class DiscussionsBlockTest extends TestCase
     private function discussion(int $id, string $title, int $daysAgo, array $extra = []): array
     {
         return $extra + [
-            'id' => $id, 'title' => $title, 'slug' => 'd'.$id, 'user_id' => 2, 'first_post_id' => $id, 'comment_count' => 3,
+            // Only discussions 1 and 5 have a first post seeded; the others
+            // must not point at one, or MySQL and PostgreSQL refuse the row.
+            'id' => $id, 'title' => $title, 'slug' => 'd'.$id, 'user_id' => 2, 'first_post_id' => in_array($id, [1, 5], true) ? $id : null, 'comment_count' => 3,
             'created_at' => Carbon::now()->subDays($daysAgo), 'last_posted_at' => Carbon::now()->subDays($daysAgo), 'is_private' => false,
         ];
     }
