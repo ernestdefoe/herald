@@ -15,7 +15,7 @@ class UpdateMailing extends Controller
         // Changing the words while they are going out would send two
         // different emails under one name.
         if ($mailing->isSending()) {
-            throw new ValidationException(['status' => resolve('translator')->trans('ernestdefoe-herald.forum.errors.sending')]);
+            throw new ValidationException(['status' => $this->translator->trans('ernestdefoe-herald.forum.errors.sending')]);
         }
 
         $this->fill($mailing, $this->body($request), $actor);

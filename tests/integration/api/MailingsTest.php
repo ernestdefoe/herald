@@ -181,4 +181,23 @@ class MailingsTest extends TestCase
         $this->assertSame('draft', $copy['status']);
         $this->assertNotSame(1, $copy['id']);
     }
+
+    #[Test]
+    public function every_older_mailing_is_reachable_a_page_at_a_time()
+    {
+        $now = \Carbon\Carbon::now();
+        $this->database()->table('herald_mailings')->insert(array_map(
+            fn (int $id) => ['id' => $id, 'subject' => "Issue $id", 'status' => 'sent', 'created_at' => $now, 'updated_at' => $now],
+            range(2, 260)
+        ));
+
+        $first = $this->body($this->call('GET', '/api/herald/mailings', 1));
+        $this->assertSame(260, $first['total']);
+        $this->assertSame(50, $first['perPage']);
+        $this->assertCount(50, $first['data']);
+        $this->assertSame(260, $first['data'][0]['id'], 'Newest first');
+
+        $last = $this->body($this->call('GET', '/api/herald/mailings?page=6', 1));
+        $this->assertSame(range(10, 1), array_column($last['data'], 'id'), 'The oldest mailing, past the old 200 cap, is on the last page');
+    }
 }

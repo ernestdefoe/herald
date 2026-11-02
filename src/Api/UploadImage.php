@@ -2,6 +2,7 @@
 
 namespace ErnestDefoe\Herald\Api;
 
+use ErnestDefoe\Herald\Builder\Blocks;
 use Flarum\Foundation\ValidationException;
 use Flarum\User\User;
 use Illuminate\Contracts\Filesystem\Factory;
@@ -9,6 +10,7 @@ use Illuminate\Support\Arr;
 use Intervention\Image\ImageManager;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Throwable;
 
 /**
@@ -28,15 +30,18 @@ class UploadImage extends Controller
     private const WIDTH = 1200;
 
     public function __construct(
+        TranslatorInterface $translator,
+        Blocks $blocks,
         private ImageManager $images,
         private Factory $filesystem,
     ) {
+        parent::__construct($translator, $blocks);
     }
 
     protected function respond(ServerRequestInterface $request, User $actor): mixed
     {
         $file = Arr::get($request->getUploadedFiles(), 'image');
-        $invalid = fn () => new ValidationException(['image' => resolve('translator')->trans('ernestdefoe-herald.forum.errors.image_invalid')]);
+        $invalid = fn () => new ValidationException(['image' => $this->translator->trans('ernestdefoe-herald.forum.errors.image_invalid')]);
 
         if (! $file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK || $file->getSize() > self::MAX_BYTES) {
             throw $invalid();

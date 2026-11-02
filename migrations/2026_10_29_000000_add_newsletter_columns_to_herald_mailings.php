@@ -8,6 +8,8 @@ use Illuminate\Database\Schema\Builder;
  * second cursor for guest subscribers. One table still holds every mailing,
  * whichever way it was written.
  */
+// Raw schema on purpose: Migration::addColumns has no hasColumn guard (a re-run
+// would fail) and cannot add indexes.
 return [
     'up' => function (Builder $schema) {
         if ($schema->hasColumn('herald_mailings', 'type')) {

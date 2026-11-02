@@ -10,6 +10,7 @@ import RecipientFilters from './RecipientFilters';
 import PreviewModal from './PreviewModal';
 import SendModal from './SendModal';
 import StatusBadge from './StatusBadge';
+import pager from './pager';
 import DeliveriesTable from './DeliveriesTable';
 import Switch from 'flarum/common/components/Switch';
 import type { BuilderMeta } from '../builder/Inspector';
@@ -43,6 +44,9 @@ export default class HeraldEditPage extends Page {
   filters: Record<string, any> = {};
   autosaveTimer?: number;
   issues: Mailing[] | null = null;
+  issuesPage = 1;
+  issuesTotal = 0;
+  issuesPerPage = 50;
 
   tab: 'content' | 'recipients' | 'deliveries' | 'issues' = 'content';
   dirty = false;
@@ -444,7 +448,7 @@ export default class HeraldEditPage extends Page {
     if (!this.issues) return <LoadingIndicator />;
     if (!this.issues.length) return <p className="HeraldEmpty">{t('edit.issues_empty')}</p>;
 
-    return (
+    return [
       <table className="HeraldTable">
         <thead>
           <tr>
@@ -473,8 +477,9 @@ export default class HeraldEditPage extends Page {
             </tr>
           ))}
         </tbody>
-      </table>
-    );
+      </table>,
+      pager(this.issuesPage, this.issuesTotal, this.issuesPerPage, (page) => ((this.issuesPage = page), this.loadIssues())),
+    ];
   }
 
   countCard() {
@@ -622,10 +627,14 @@ export default class HeraldEditPage extends Page {
   }
 
   loadIssues() {
-    api<{ data: Mailing[] }>('GET', `/mailings?series=${this.id}`).then(({ data }) => {
-      this.issues = data;
-      m.redraw();
-    });
+    api<{ data: Mailing[]; total: number; perPage: number }>('GET', `/mailings?series=${this.id}&page=${this.issuesPage}`).then(
+      ({ data, total, perPage }) => {
+        this.issues = data;
+        this.issuesTotal = total;
+        this.issuesPerPage = perPage;
+        m.redraw();
+      }
+    );
   }
 
   unschedule() {

@@ -22,7 +22,7 @@ class ListDeliveries extends Controller
         $params = $request->getQueryParams();
         $page = max(1, (int) Arr::get($params, 'page', 1));
         $status = Arr::get($params, 'status');
-        $db = resolve('db.connection');
+        $db = $mailing->getConnection();
 
         $query = $db->table('herald_deliveries')
             ->where('mailing_id', $mailing->id)

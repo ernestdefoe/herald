@@ -19,7 +19,7 @@ class CopyMailing extends Controller
 
         $subject = match ($as) {
             'template', 'use' => $original->subject,
-            default => mb_substr(resolve('translator')->trans('ernestdefoe-herald.forum.list.copy_of', ['subject' => $original->subject]), 0, 255),
+            default => mb_substr($this->translator->trans('ernestdefoe-herald.forum.list.copy_of', ['subject' => $original->subject]), 0, 255),
         };
 
         $copy = $original->duplicate([

@@ -23,7 +23,7 @@ class ScheduleMailing extends Controller
     protected function respond(ServerRequestInterface $request, User $actor): mixed
     {
         $mailing = $this->mailing($request);
-        $trans = fn (string $key) => resolve('translator')->trans('ernestdefoe-herald.forum.errors.'.$key);
+        $trans = fn (string $key) => $this->translator->trans('ernestdefoe-herald.forum.errors.'.$key);
 
         if ($request->getMethod() === 'DELETE') {
             if ($mailing->status === Mailing::SCHEDULED) {

@@ -2,25 +2,30 @@
 
 namespace ErnestDefoe\Herald\Api;
 
+use ErnestDefoe\Herald\Builder\Blocks;
 use ErnestDefoe\Herald\Mailing;
 use ErnestDefoe\Herald\Sending\Drivers;
 use ErnestDefoe\Herald\Sending\Processor;
 use Flarum\Foundation\ValidationException;
 use Flarum\User\User;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SendMailing extends Controller
 {
     public function __construct(
+        TranslatorInterface $translator,
+        Blocks $blocks,
         private Processor $processor,
         private Drivers $drivers,
     ) {
+        parent::__construct($translator, $blocks);
     }
 
     protected function respond(ServerRequestInterface $request, User $actor): mixed
     {
         $mailing = $this->mailing($request);
-        $trans = fn (string $key) => resolve('translator')->trans('ernestdefoe-herald.forum.errors.'.$key);
+        $trans = fn (string $key) => $this->translator->trans('ernestdefoe-herald.forum.errors.'.$key);
 
         if ($mailing->isSending()) {
             throw new ValidationException(['status' => $trans('sending')]);

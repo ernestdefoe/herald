@@ -14,7 +14,7 @@ class DeleteMailing extends Controller
         $mailing = $this->mailing($request);
 
         if ($mailing->isSending()) {
-            throw new ValidationException(['status' => resolve('translator')->trans('ernestdefoe-herald.forum.errors.sending')]);
+            throw new ValidationException(['status' => $this->translator->trans('ernestdefoe-herald.forum.errors.sending')]);
         }
 
         // A deleted series leaves its issues as ordinary mailings, with their

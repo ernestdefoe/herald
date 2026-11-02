@@ -2,9 +2,11 @@
 
 namespace ErnestDefoe\Herald\Api;
 
+use ErnestDefoe\Herald\Builder\Blocks;
 use ErnestDefoe\Herald\Sending\Processor;
 use Flarum\User\User;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * The progress page's driver — Invision's MultipleRedirect. While an admin
@@ -13,8 +15,12 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class ProcessBatch extends Controller
 {
-    public function __construct(private Processor $processor)
-    {
+    public function __construct(
+        TranslatorInterface $translator,
+        Blocks $blocks,
+        private Processor $processor,
+    ) {
+        parent::__construct($translator, $blocks);
     }
 
     protected function respond(ServerRequestInterface $request, User $actor): mixed

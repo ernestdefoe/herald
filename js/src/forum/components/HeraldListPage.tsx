@@ -10,6 +10,7 @@ import extractText from 'flarum/common/utils/extractText';
 import StatusBadge from './StatusBadge';
 import PreviewModal from './PreviewModal';
 import SubscribersPanel from './SubscribersPanel';
+import pager from './pager';
 import { api, Mailing, t } from '../util';
 import { when } from '../when';
 
@@ -24,6 +25,9 @@ export default class HeraldListPage extends Page {
   timer?: number;
   removed = false;
   view_: View = 'mailings';
+  page = 1;
+  total = 0;
+  perPage = 50;
 
   oninit(vnode: any) {
     super.oninit(vnode);
@@ -46,10 +50,12 @@ export default class HeraldListPage extends Page {
     clearTimeout(this.timer);
     if (this.view_ === 'subscribers') return Promise.resolve();
 
-    const query = this.view_ === 'mailings' ? '' : `?view=${this.view_}`;
+    const query = this.view_ === 'mailings' ? '' : `&view=${this.view_}`;
 
-    return api<{ data: Mailing[] }>('GET', `/mailings${query}`).then(({ data }) => {
+    return api<{ data: Mailing[]; total: number; perPage: number }>('GET', `/mailings?page=${this.page}${query}`).then(({ data, total, perPage }) => {
       this.mailings = data;
+      this.total = total;
+      this.perPage = perPage;
       m.redraw();
 
       // Keep a sending row's progress moving while the list is open.
@@ -103,6 +109,7 @@ export default class HeraldListPage extends Page {
               </p>
             ) : null,
             this.mailings === null ? <LoadingIndicator /> : this.mailings.length ? this.table(this.mailings) : this.empty(),
+            pager(this.page, this.total, this.perPage, (page) => ((this.page = page), (this.mailings = null), this.load())),
           ]
         )}
       </div>
@@ -122,6 +129,7 @@ export default class HeraldListPage extends Page {
 
   show(view: View) {
     this.view_ = view;
+    this.page = 1;
     this.mailings = null;
     this.load();
   }

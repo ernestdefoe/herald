@@ -3,6 +3,7 @@
 namespace ErnestDefoe\Herald\Api;
 
 use Carbon\Carbon;
+use ErnestDefoe\Herald\Builder\Blocks;
 use ErnestDefoe\Herald\Locale;
 use ErnestDefoe\Herald\Mail\Renderer;
 use ErnestDefoe\Herald\Mailing;
@@ -10,6 +11,7 @@ use ErnestDefoe\Herald\Personaliser;
 use ErnestDefoe\Herald\Tag\TagRegistry;
 use Flarum\User\User;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * The email exactly as it would arrive, filled in with the ADMIN's own
@@ -20,11 +22,14 @@ use Psr\Http\Message\ServerRequestInterface;
 class PreviewMailing extends Controller
 {
     public function __construct(
+        TranslatorInterface $translator,
+        Blocks $blocks,
         private Renderer $renderer,
         private TagRegistry $tags,
         private Personaliser $personaliser,
         private Locale $locale,
     ) {
+        parent::__construct($translator, $blocks);
     }
 
     protected function respond(ServerRequestInterface $request, User $actor): mixed

@@ -14,9 +14,22 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
+/**
+ * Herald's admin endpoints are RPC-style actions on one model (send, schedule,
+ * preview, test, resend, export), used only by its own pages, so they answer
+ * plain JSON rather than JSON:API resources. Every one is gated on the Herald
+ * permission in handle().
+ */
 abstract class Controller implements RequestHandlerInterface
 {
+    public function __construct(
+        protected TranslatorInterface $translator,
+        protected Blocks $blocks,
+    ) {
+    }
+
     abstract protected function respond(ServerRequestInterface $request, User $actor): mixed;
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -52,7 +65,7 @@ abstract class Controller implements RequestHandlerInterface
             $subject = trim((string) $body['subject']);
 
             if (mb_strlen($subject) > 255) {
-                throw new ValidationException(['subject' => resolve('translator')->trans('ernestdefoe-herald.forum.errors.subject_too_long')]);
+                throw new ValidationException(['subject' => $this->translator->trans('ernestdefoe-herald.forum.errors.subject_too_long')]);
             }
 
             $mailing->subject = $subject;
@@ -67,7 +80,7 @@ abstract class Controller implements RequestHandlerInterface
         }
 
         if (array_key_exists('blocks', $body)) {
-            $mailing->blocks = $body['blocks'] === null ? null : resolve(Blocks::class)->normalise($body['blocks']);
+            $mailing->blocks = $body['blocks'] === null ? null : $this->blocks->normalise($body['blocks']);
         }
 
         if (array_key_exists('preheader', $body)) {
@@ -98,7 +111,7 @@ abstract class Controller implements RequestHandlerInterface
             return $out;
         }
 
-        $rows = resolve('db.connection')->table('herald_deliveries')
+        $rows = Mailing::query()->getConnection()->table('herald_deliveries')
             ->whereIn('mailing_id', $ids)
             ->groupBy('mailing_id', 'status')
             ->selectRaw('mailing_id, status, COUNT(*) as total')

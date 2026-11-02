@@ -4,6 +4,7 @@ import Button from 'flarum/common/components/Button';
 import Link from 'flarum/common/components/Link';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import extractText from 'flarum/common/utils/extractText';
+import pager from './pager';
 import { api, Mailing, t } from '../util';
 import { when } from '../when';
 
@@ -54,7 +55,6 @@ export default class DeliveriesTable extends Component<{ mailing: Mailing; onres
   }
 
   view() {
-    const pages = Math.max(1, Math.ceil(this.total / this.perPage));
     const finished = ['sent', 'cancelled'].includes(this.attrs.mailing.status);
 
     return (
@@ -129,17 +129,7 @@ export default class DeliveriesTable extends Component<{ mailing: Mailing; onres
           </table>
         )}
 
-        {pages > 1 ? (
-          <div className="HeraldPager">
-            <Button className="Button" icon="fas fa-chevron-left" disabled={this.page <= 1} onclick={() => (this.page--, this.load())}>
-              {t('deliveries.previous')}
-            </Button>
-            <span>{t('deliveries.page', { page: this.page, pages })}</span>
-            <Button className="Button" disabled={this.page >= pages} onclick={() => (this.page++, this.load())}>
-              {t('deliveries.next')}
-            </Button>
-          </div>
-        ) : null}
+        {pager(this.page, this.total, this.perPage, (page) => ((this.page = page), this.load()))}
       </div>
     );
   }

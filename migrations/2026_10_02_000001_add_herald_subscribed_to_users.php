@@ -10,6 +10,8 @@ use Illuminate\Database\Schema\Builder;
  * Default TRUE: members are opted in, the way Invision Community does it, and
  * every message says plainly how to opt out.
  */
+// Raw schema on purpose: Migration::addColumns has no hasColumn guard, so a
+// re-run would fail.
 return [
     'up' => function (Builder $schema) {
         if ($schema->hasColumn('users', 'herald_subscribed')) {

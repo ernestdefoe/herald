@@ -10,6 +10,7 @@ use Flarum\Extension\ExtensionManager;
 use Flarum\User\Guest;
 use Flarum\User\User;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What the compose screen and the builder need to draw themselves: the quick
@@ -19,10 +20,13 @@ use Psr\Http\Message\ServerRequestInterface;
 class Meta extends Controller
 {
     public function __construct(
+        TranslatorInterface $translator,
+        Blocks $blocks,
         private TagRegistry $tags,
         private Drivers $drivers,
         private ExtensionManager $extensions,
     ) {
+        parent::__construct($translator, $blocks);
     }
 
     protected function respond(ServerRequestInterface $request, User $actor): mixed
